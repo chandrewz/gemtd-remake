@@ -1998,32 +1998,33 @@ function pyramid(col, s, grand){
   return {m, fx:[['orb',y,r,col]], cam:{pitch:-.38,yaw:.35}};
 }
 
-// ---- Star Ruby family: a low volcano that scorches the ground; the ruby sits glowing in its crater ----
-const BASALT = stoneMat('#2b2220', .25), BASALT2 = stoneMat('#3b2c27', .2), SCORCH = stoneMat('#160f0d', .1);
-const LAVA2 = {kind:'gem', col:[1,.38,.06], deep:[.4,.04,0], glow:[1,.75,.3], alpha:.95, edge:.05};
-const RUBY = {kind:'gem', col:[1,.1,.2], deep:[.3,0,.04], glow:[1,.45,.5], alpha:.92, edge:.08};
+// ---- Star Ruby family: an obsidian volcano whose crater is a ruby geode, a cut ruby glowing at its heart ----
+const OBSID = stoneMat('#2a2232', .75), OBSID2 = stoneMat('#372b3d', .65), SCORCH = stoneMat('#140e10', .15);
+const RUBY = {kind:'gem', col:[1,.1,.2], deep:[.3,0,.04], glow:[1,.45,.5], alpha:.86, edge:.1};
+const RUBYD = {kind:'gem', col:[.75,.03,.12], deep:[.2,0,.03], glow:[1,.3,.35], alpha:.9, edge:.08};
+const EMBERC = {kind:'gem', col:[1,.5,.12], deep:[.35,.06,0], glow:[1,.8,.4], alpha:.85, edge:.1};
 FAM.starruby = (t,d) => {
-  const m=[], H=[0,.2,.25,.3][t], R0=[0,.3,.33,.36][t], Rc=[0,.08,.09,.1][t];
-  // scorched earth, with glowing cracks running outward
-  m.push(lathe([[.44,0],[.44,.008]],24,SCORCH));
-  const cracks = [0,5,7,9][t];
-  for (let i=0;i<cracks;i++){ const a=i*2*Math.PI/cracks+.3; m.push(petal(.1+(i%3)*.03,.012,.003,LAVA2,a,0,.01,R0*.95)); }
-  // the cone: rough basalt, slightly lumpy, open crater
-  m.push(place(lathe([[R0,.005],[R0*.8,H*.35],[R0*.5,H*.75],[Rc*1.35,H],[Rc,H*.92]],9,BASALT),{ry:.3}));
-  m.push(place(lathe([[R0*.82,.005],[R0*.6,H*.4],[R0*.34,H*.7]],7,BASALT2),{tx:.03,tz:-.02,ry:1.1}));
-  // lava pool in the crater, the ruby half-sunk in it
-  m.push(place(lathe([[Rc*1.02,H*.86],[Rc*1.02,H*.9]],12,LAVA2),{}));
-  m.push(place(gemBall(Rc*.8,RUBY,12,7),{ty:H*.95}));
-  // lava streams running down the slope
-  const streams=[0,2,3,4][t];
-  for (let i=0;i<streams;i++){ const b=i*2*Math.PI/streams+.8, dx=R0*.75-Rc, dy=-H*.82, L=Math.hypot(dx,dy);
-    m.push(place(place(bladeMesh(L*.9,.02+t*.004,.006,LAVA2),{rz:Math.atan2(-dx,dy), tx:Rc*1.1, ty:H*.9}),{ry:-b})); }
-  // higher tiers: ruby crystals breaking through the flanks
-  if (t>=2) for (let i=0;i<(t===3?5:3);i++){ const a=i*2*Math.PI/(t===3?5:3)+.2, r=R0*.55;
-    m.push(place(crystalMesh(5,.022,.05,.05,RUBY,.8),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:H*.35,rz:-Math.cos(a)*.6,rx:Math.sin(a)*.6})); }
-  const fx = [['glow',H*.95,Rc*1.4,'#ff5a1a'], ['core',H*.95,Rc*.9,'#ff1028'], ['pool',.0,'#ff3b1a']];
-  if (t===3) fx.unshift(['inferno', H*.9, .22, .12]);   // Fire Star erupts
-  else if (t===2) fx.push(['embers', H, .1]);
+  const m=[], H=[0,.22,.27,.32][t], R0=[0,.3,.33,.36][t], Rc=[0,.09,.1,.11][t];
+  m.push(lathe([[.42,0],[.42,.006]],28,SCORCH));
+  // glossy obsidian cone in two overlapping masses for a natural silhouette
+  m.push(place(lathe([[R0,.004],[R0*.82,H*.3],[R0*.55,H*.68],[Rc*1.45,H],[Rc*1.2,H*.97]],11,OBSID),{ry:.3}));
+  m.push(place(lathe([[R0*.78,.004],[R0*.58,H*.36],[R0*.36,H*.66]],8,OBSID2),{tx:.05,tz:-.03,ry:1.1}));
+  m.push(place(lathe([[R0*.6,.004],[R0*.4,H*.3],[R0*.22,H*.5]],7,OBSID2),{tx:-.07,tz:.04,ry:2.2}));
+  // the crater is a geode: ruby crystals ring the rim, pointing up and out
+  const nr=[0,7,9,12][t];
+  for (let i=0;i<nr;i++){ const a=i*2*Math.PI/nr, r=Rc*1.15, h=.05+((i*7)%3)*.02+t*.01;
+    m.push(place(crystalMesh(5,.018+t*.002,h,h*.7,i%2?RUBYD:(t===3&&i%3===0?EMBERC:RUBY),.75),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:H*.9,rz:-Math.cos(a)*.45,rx:Math.sin(a)*.45})); }
+  // the heart: a cut ruby set table-up in the crater
+  m.push(place(brilliantMesh(Rc*.95,RUBY,16),{ty:H*.98}));
+  // ruby clusters breaking through the flanks, more each tier
+  const fl=[0,2,4,6][t];
+  for (let i=0;i<fl;i++){ const a=i*2*Math.PI/fl+.5, r=R0*(.55+(i%2)*.15), y=H*(.3-(i%2)*.12);
+    for (let k=0;k<3;k++) m.push(place(crystalMesh(5,.02+k*.004,.04+k*.02,.035,k===1?RUBYD:RUBY,.8),{tx:Math.cos(a)*r+k*.012,tz:Math.sin(a)*r,ty:y,rz:-Math.cos(a)*(.7+k*.2),rx:Math.sin(a)*(.7+k*.2)})); }
+  // scattered ruby chips on the scorched ground
+  for (let i=0;i<4+t*2;i++){ const a=i*2.4+.7, r=R0*1.05+(i%3)*.02;
+    m.push(place(gemBall(.012+(i%2)*.006,i%3?RUBYD:RUBY,6,4),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.01})); }
+  const fx = [['glow',H*1.02,Rc*1.6,'#ff3b4a'], ['core',H*1.0,Rc*.8,'#ff1028']];
+  if (t===3) fx.push(['embers', H*1.05, .12]);
   return {m, fx, cam:{pitch:-.5,yaw:.4}};
 };
 
