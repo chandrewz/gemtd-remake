@@ -154,6 +154,10 @@ sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', ran
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
 sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.75,dur:3}});
 
+// one fixed damage value per hit: the average of the old dice roll (crits stay random)
+for (const d of Object.values(DEFS)) if (d.dmg) d.hit = Math.round(d.dmg + d.nd*(d.dice+1)/2);
+const fmtHit = d => d.hit.toLocaleString();
+
 const RECIPES = [
   {to:'silver1',        parts:['D1','S1','T1'],          group:'special'},
   {to:'malachite1',     parts:['Q1','E1','O1'],          group:'special'},
@@ -1719,7 +1723,7 @@ function card(key, how){
   const top=document.createElement('div'); top.className='top'; top.appendChild(gemCanvas(key,120,false));
   const t=document.createElement('div'); t.innerHTML=`<div class="name">${d.name}</div><div class="sub">${key==='bryvx'?'Legendary':TIERNAME[d.tier]} · ${DTYPE_NAME[d.dtype]} damage</div>`; top.appendChild(t); el.appendChild(top);
   const st=document.createElement('div'); st.className='stats';
-  st.innerHTML = `<div><span>Damage</span><b>${d.dmg?`${d.dmg+d.nd}–${d.dmg+d.nd*d.dice}`:'—'}</b></div><div><span>Cooldown</span><b>${d.dmg?d.cd+'s':'—'}</b></div><div><span>Range</span><b>${d.dmg?tiles(d.range):tiles((d.burn||d.radslow||{r:d.range}).r)}</b></div><div><span>Targets</span><b>${d.air&&d.ground?'Both':d.air?'Air':'Ground'}</b></div>`;
+  st.innerHTML = `<div><span>Damage</span><b>${d.dmg?fmtHit(d):'—'}</b></div><div><span>Cooldown</span><b>${d.dmg?d.cd+'s':'—'}</b></div><div><span>Range</span><b>${d.dmg?tiles(d.range):tiles((d.burn||d.radslow||{r:d.range}).r)}</b></div><div><span>Targets</span><b>${d.air&&d.ground?'Both':d.air?'Air':'Ground'}</b></div>`;
   el.appendChild(st);
   const ul=document.createElement('ul'); ul.innerHTML = abilities(d).map(a=>`<li>${a}</li>`).join(''); el.appendChild(ul);
   const pr=document.createElement('div'); pr.className='parts';
@@ -1737,7 +1741,7 @@ section('Base gems', 'Eight types in six qualities: Chipped, Flawed, Normal, Fla
   wrap.innerHTML = '<span></span>' + QN.slice(1).map(q=>`<span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8e95ad;text-align:center">${q}</span>`).join('');
   for (const t of TYPES){ const n=document.createElement('b'); n.textContent=`${GT[t].name} (${SH[t]})`; n.style.cssText=`font-family:var(--f-display);font-weight:400;font-size:17px;color:${GT[t].color}`; wrap.appendChild(n);
     for (let q=1;q<=6;q++){ const cell=document.createElement('div'); cell.style.cssText='display:flex;flex-direction:column;align-items:center;font-size:11px;color:#8e95ad;text-align:center'; const d=DEFS[t+q];
-      cell.appendChild(gemCanvas(t+q,64,false)); cell.append(`${d.dmg+1}–${d.dmg+d.dice} · ${d.cd}s`); wrap.appendChild(cell); } }
+      cell.appendChild(gemCanvas(t+q,64,false)); cell.append(`${fmtHit(d)} dmg · ${d.cd}s`); wrap.appendChild(cell); } }
   out.appendChild(wrap); }
 section('Specials', 'Thirteen gem recipes. Each upgrades in place with gold.');
 for (const R of RECIPES.filter(r=>r.group==='special')){
