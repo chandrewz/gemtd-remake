@@ -1998,34 +1998,47 @@ function pyramid(col, s, grand){
   return {m, fx:[['orb',y,r,col]], cam:{pitch:-.38,yaw:.35}};
 }
 
-// ---- Star Ruby family: an obsidian volcano whose crater is a ruby geode, a cut ruby glowing at its heart ----
-const OBSID = stoneMat('#2a2232', .75), OBSID2 = stoneMat('#372b3d', .65), SCORCH = stoneMat('#140e10', .15);
+// ---- Star Ruby family: a brown volcano with a faint star-ridged cone and a ruby-geode crater, the cut ruby crowning it ----
+const VROCK = stoneMat('#5a3d2c', .3), VROCK2 = stoneMat('#6b4a35', .28), VROCK3 = stoneMat('#432c20', .25), SCORCH = stoneMat('#22160f', .12);
 const RUBY = {kind:'gem', col:[1,.1,.2], deep:[.3,0,.04], glow:[1,.45,.5], alpha:.86, edge:.1};
 const RUBYD = {kind:'gem', col:[.75,.03,.12], deep:[.2,0,.03], glow:[1,.3,.35], alpha:.9, edge:.08};
 const EMBERC = {kind:'gem', col:[1,.5,.12], deep:[.35,.06,0], glow:[1,.8,.4], alpha:.85, edge:.1};
+// a cone whose cross-section bulges into n soft ridges: a star you notice only on a second look
+function ridgedCone(n, prof, amp, mat, rot=0){ const v=[], f=[], N=n*4;
+  prof.forEach(([r,y],k)=>{ const am = amp*(1-k/(prof.length-1))*.9 + amp*.1;
+    for (let i=0;i<N;i++){ const a=rot+i*2*Math.PI/N, s=Math.cos(n*(a-rot)); v.push([Math.cos(a)*r*(1+am*s), y, Math.sin(a)*r*(1+am*s)]); } });
+  for (let k=0;k<prof.length-1;k++) for (let i=0;i<N;i++){ const j=(i+1)%N; f.push([k*N+i,k*N+j,(k+1)*N+j,(k+1)*N+i]); }
+  f.push([...Array(N).keys()].reverse());
+  return {v,f,mat}; }
 FAM.starruby = (t,d) => {
-  const m=[], H=[0,.22,.27,.32][t], R0=[0,.3,.33,.36][t], Rc=[0,.09,.1,.11][t];
-  m.push(lathe([[.42,0],[.42,.006]],28,SCORCH));
-  // glossy obsidian cone in two overlapping masses for a natural silhouette
-  m.push(place(lathe([[R0,.004],[R0*.82,H*.3],[R0*.55,H*.68],[Rc*1.45,H],[Rc*1.2,H*.97]],11,OBSID),{ry:.3}));
-  m.push(place(lathe([[R0*.78,.004],[R0*.58,H*.36],[R0*.36,H*.66]],8,OBSID2),{tx:.05,tz:-.03,ry:1.1}));
-  m.push(place(lathe([[R0*.6,.004],[R0*.4,H*.3],[R0*.22,H*.5]],7,OBSID2),{tx:-.07,tz:.04,ry:2.2}));
-  // the crater is a geode: ruby crystals ring the rim, pointing up and out
-  const nr=[0,7,9,12][t];
-  for (let i=0;i<nr;i++){ const a=i*2*Math.PI/nr, r=Rc*1.15, h=.05+((i*7)%3)*.02+t*.01;
-    m.push(place(crystalMesh(5,.018+t*.002,h,h*.7,i%2?RUBYD:(t===3&&i%3===0?EMBERC:RUBY),.75),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:H*.9,rz:-Math.cos(a)*.45,rx:Math.sin(a)*.45})); }
-  // the heart: a cut ruby set table-up in the crater
-  m.push(place(brilliantMesh(Rc*.95,RUBY,16),{ty:H*.98}));
-  // ruby clusters breaking through the flanks, more each tier
-  const fl=[0,2,4,6][t];
-  for (let i=0;i<fl;i++){ const a=i*2*Math.PI/fl+.5, r=R0*(.55+(i%2)*.15), y=H*(.3-(i%2)*.12);
-    for (let k=0;k<3;k++) m.push(place(crystalMesh(5,.02+k*.004,.04+k*.02,.035,k===1?RUBYD:RUBY,.8),{tx:Math.cos(a)*r+k*.012,tz:Math.sin(a)*r,ty:y,rz:-Math.cos(a)*(.7+k*.2),rx:Math.sin(a)*(.7+k*.2)})); }
-  // scattered ruby chips on the scorched ground
-  for (let i=0;i<4+t*2;i++){ const a=i*2.4+.7, r=R0*1.05+(i%3)*.02;
-    m.push(place(gemBall(.012+(i%2)*.006,i%3?RUBYD:RUBY,6,4),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.01})); }
-  const fx = [['glow',H*1.02,Rc*1.6,'#ff3b4a'], ['core',H*1.0,Rc*.8,'#ff1028']];
-  if (t===3) fx.push(['embers', H*1.05, .12]);
-  return {m, fx, cam:{pitch:-.5,yaw:.4}};
+  const m=[], H=[0,.22,.27,.32][t], R0=[0,.31,.34,.37][t], Rc=[0,.085,.095,.105][t], n=5, rot=-Math.PI/2;
+  m.push(lathe([[.44,0],[.44,.006]],28,SCORCH));
+  // the cone, banded into rock strata
+  m.push(ridgedCone(n, [[R0,.004],[R0*.84,H*.26],[R0*.62,H*.55],[R0*.4,H*.8],[Rc*1.4,H],[Rc*1.15,H*.96]], .16, VROCK, rot));
+  m.push(ridgedCone(n, [[R0*.86,H*.22],[R0*.84,H*.26]], .15, VROCK3, rot));
+  m.push(ridgedCone(n, [[R0*.64,H*.52],[R0*.62,H*.55]], .12, VROCK2, rot));
+  m.push(ridgedCone(n, [[R0*.42,H*.77],[R0*.4,H*.8]], .1, VROCK3, rot));
+  // boulders tumbled around the foot
+  for (let i=0;i<7+t;i++){ const a=i*2.7+.4, r=R0*(.95+(i%3)*.06);
+    m.push(place(gemBall(.025+(i%3)*.012, i%2?VROCK2:VROCK3, 6, 4),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.012,sy:.7,ry:i})); }
+  // geode rim: short ruby crystals splayed outward so the jewel stays in view
+  const nr=[0,8,10,12][t];
+  for (let i=0;i<nr;i++){ const a=i*2*Math.PI/nr+.2, r=Rc*1.2, h=.03+((i*7)%3)*.012+t*.006;
+    m.push(place(crystalMesh(5,.016+t*.002,h,h*.6,i%2?RUBYD:(t===3&&i%3===0?EMBERC:RUBY),.75),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:H*.93,rz:-Math.cos(a)*.85,rx:Math.sin(a)*.85})); }
+  // the jewel: a cut ruby lifted proud of the crater on a ruby pool
+  m.push(place(lathe([[Rc*1.05,H*.9],[Rc*1.05,H*.94]],14,RUBYD),{}));
+  const yj = H*1.0 + Rc*.5;
+  m.push(place(brilliantMesh(Rc*1.05,{kind:'gem', col:[.95,.04,.14], deep:[.28,0,.03], glow:[1,.35,.4], alpha:.93, edge:.12},16),{ty:yj,rx:.25}));
+  // ruby clusters breaking through the flanks along the ridges
+  const fl=[0,2,3,5][t];
+  for (let i=0;i<fl;i++){ const a=rot+i*2*Math.PI/n+.0, r=R0*(.58+(i%2)*.12), y=H*(.32-(i%2)*.12);
+    for (let k=0;k<3;k++) m.push(place(crystalMesh(5,.018+k*.004,.035+k*.018,.03,k===1?RUBYD:RUBY,.8),{tx:Math.cos(a)*r+(k-1)*.014,tz:Math.sin(a)*r,ty:y,rz:-Math.cos(a)*(.7+k*.2),rx:Math.sin(a)*(.7+k*.2)})); }
+  // ruby chips scattered on the scorched ground
+  for (let i=0;i<4+t*2;i++){ const a=i*2.4+.7, r=R0*1.1+(i%3)*.02;
+    m.push(place(gemBall(.011+(i%2)*.005,i%3?RUBYD:RUBY,6,4),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.01})); }
+  const fx = [['glow',yj,Rc*1.2,'#ff2038']];
+  if (t===3) fx.push(['embers', yj, .12]);
+  return {m, fx, cam:{pitch:-.48,yaw:.4}};
 };
 
 // ---- ultimates ----
