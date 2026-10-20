@@ -171,7 +171,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
           <p id="endText"></p>
           <div class="diff"><button class="primary" id="againBtn">Play again</button></div>
           <div class="submit" id="submitBox">
-            <div class="submit-row"><input id="playerName" maxlength="24" placeholder="Your name" autocomplete="nickname"><button id="submitBtn">Submit score</button></div>
+            <div class="submit-row"><input id="playerName" maxlength="24" placeholder="Your name" autocomplete="off" autocapitalize="off" spellcheck="false" name="gemtd-player"><button id="submitBtn">Submit score</button></div>
             <div class="submit-row"><button id="copyReplayBtn">Copy replay code</button><a id="lbLink" href="leaderboard.html" target="_blank" rel="noopener">Leaderboard</a></div>
             <p class="hint" id="submitNote"></p>
           </div>
@@ -196,7 +196,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <button id="pauseBtn">Pause</button>
       <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp3">3×</button>
       <button id="pathBtn" class="on">Path</button>
-      <button id="bookBtn" class="grow">Recipe book</button><button id="lbBtn" hidden>Leaderboard</button>
+      <button id="bookBtn" class="grow">Recipe book</button><button id="lbBtn" hidden>Leaderboard</button><button id="galBtn" hidden>Towers</button>
       <button id="restartBtn">Restart</button>
     </div>
     <p class="keys"><kbd>Tab</kbd> next gem · <kbd>K</kbd> keep · <kbd>D</kbd> downgrade · <kbd>C</kbd> combine ×2 · <kbd>F</kbd> ×4 · <kbd>N</kbd> new five (repick) · <kbd>S</kbd> special · <kbd>U</kbd> upgrade · <kbd>R</kbd> remove rock · <kbd>G</kbd> buy chances · <kbd>B</kbd> recipes · <kbd>P</kbd> path · <kbd>Space</kbd> pause · <kbd>1</kbd>–<kbd>3</kbd> speed · <kbd>Esc</kbd> deselect</p>
@@ -2514,11 +2514,23 @@ function towerDps(t, d){
   avg *= (1 + t.bDmg) * (1 + rankOf(t)*RANK_BONUS);
   return avg / (d.cd/(1+t.bSpd)) * (d.multi && d.multi<99 ? d.multi : 1) + (d.burn ? d.burn.dps : 0);
 }
+// inspector portrait: rendered at its own resolution so it stays crisp and fills the box
+const portraits = new Map();
 function miniSprite(key){
-  const c = document.createElement('canvas'); const s = 44; c.width = s*DPR; c.height = s*DPR; c.style.width = s+'px'; c.style.height = s+'px';
-  const spr = makeSprite(key, 1), g = c.getContext('2d');
-  if (spr.tower){ const k = c.height/spr.height; g.drawImage(spr, (c.width - spr.width*k)/2, 0, spr.width*k, c.height); }
-  else g.drawImage(spr, 0, 0, c.width, c.height);
+  const d = DEFS[key], tall = d.kind!=='gem' && key!=='rock';
+  const W = tall ? 84 : 64, H = tall ? 112 : 64, id = `${key}@${DPR}`;
+  const c = document.createElement('canvas'); c.width = W*DPR; c.height = H*DPR; c.style.width = W+'px'; c.style.height = H+'px';
+  const g = c.getContext('2d');
+  if (!portraits.has(id)){
+    let img;
+    if (d.kind==='gem'){ img = document.createElement('canvas'); img.width = c.width; img.height = c.height; Art.drawGem(img.getContext('2d'), c.width/2, c.height/2, c.width*.46, d.type, d.q, 0); }
+    else if (tall){ const cell = c.height/2.45; img = Tower3D.towerSprite(key, d, cell, cell*1.7, cell*2.45, cell*.3); }
+    else img = makeSprite(key, 1);
+    portraits.set(id, img);
+  }
+  const img = portraits.get(id);
+  if (tall){ const k = Math.min(c.width/img.width, c.height/img.height); g.drawImage(img, (c.width-img.width*k)/2, c.height-img.height*k, img.width*k, img.height*k); }
+  else g.drawImage(img, 0, 0, c.width, c.height);
   return c;
 }
 
@@ -2716,7 +2728,7 @@ function submitRepo(){
 let endReplay = null;
 async function prepareSubmit(){
   const repo = submitRepo(), note = $('submitNote'), nameEl = $('playerName');
-  try { nameEl.value = localStorage.getItem('gemtd-name') || ''; } catch(e){}
+  nameEl.value = '';
   $('lbLink').hidden = !repo;
   endReplay = null; note.textContent = 'Preparing replay…';
   try { endReplay = await encodeReplay(exportReplay(nameEl.value)); } catch(e){ note.textContent = 'This browser can’t build a replay.'; $('submitBtn').disabled = $('copyReplayBtn').disabled = true; return; }
@@ -2728,7 +2740,7 @@ $('copyReplayBtn').onclick = async ()=>{ if (!endReplay) return; try { await nav
 $('submitBtn').onclick = async ()=>{
   const repo = submitRepo(); if (!repo || !S) return;
   const name = ($('playerName').value || 'Anonymous').trim().slice(0,24);
-  try { localStorage.setItem('gemtd-name', name); } catch(e){}
+  if (/@|https?:|www\./i.test(name)){ $('submitNote').textContent = 'Use a nickname, not an email or link. Names are shown publicly.'; $('playerName').focus(); return; }
   const code = await encodeReplay(exportReplay(name)); endReplay = code;
   const reached = S.wave;   // the wave the castle fell on, matching "You reached wave N"
   const title = `[score] Wave ${reached} · ${name}`;
@@ -2740,6 +2752,7 @@ $('submitBtn').onclick = async ()=>{
     $('submitNote').textContent = 'Your replay was long, so it was copied to your clipboard. Paste it into the Replay box on GitHub.';
   }
   window.open(url, '_blank', 'noopener');
+  if (url.length <= 7800) $('submitNote').innerHTML = 'An issue opened in a new tab. Press <b>Submit new issue</b> there. The bot replays your run in about 2 minutes, comments your score, and the <a href="leaderboard.html" target="_blank" rel="noopener">leaderboard</a> updates a minute after that.';
 };
 
 function showEnd(won){
@@ -2807,6 +2820,8 @@ $('pathBtn').onclick = ()=>{ ui.showPath = !ui.showPath; $('pathBtn').classList.
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
 $('lbBtn').hidden = !submitRepo();
+$('galBtn').onclick = ()=> window.open('towers.html','_blank','noopener');
+$('galBtn').hidden = !submitRepo();
 $('bookClose').onclick = ()=>{ $('bookModal').hidden = true; };
 $('bookModal').addEventListener('click', ev => { if (ev.target.id==='bookModal') $('bookModal').hidden = true; });
 document.querySelectorAll('.tabs [data-tab]').forEach(b => b.onclick = ()=>{ ui.tab = b.dataset.tab; renderBook(); });

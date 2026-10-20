@@ -18,6 +18,7 @@ body{background:var(--ink);color:var(--fg);font-family:var(--f-ui);font-size:15p
 header h1{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,5vw,44px);margin:0;letter-spacing:.04em;line-height:1}
 header h1 span{color:var(--gold)}
 header p{margin:8px 0 0;color:var(--muted);max-width:72ch}
+.sitenav{display:flex;gap:18px;margin:0 0 10px}.sitenav a{color:var(--gold);text-decoration:none;font-weight:600}.sitenav a:hover{text-decoration:underline}
 h2.sec{font-family:var(--f-display);font-weight:400;font-size:24px;margin:8px 0 0}
 .sec-note{color:var(--muted);margin:2px 0 0;font-size:14px}
 .family{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}
@@ -41,12 +42,13 @@ ul{margin:0;padding-left:16px;font-size:13px;display:flex;flex-direction:column;
 @media (max-width:520px){ .grid4{grid-template-columns:minmax(0,1fr)} }
 </style>
 <div class="wrap">
-  <header><h1>Recipe <span>towers</span></h1>
+  <header><nav class="sitenav" id="sitenav" hidden><a href="./">Play the game</a><a href="leaderboard.html">Leaderboard</a></nav><h1>Recipe <span>towers</span></h1>
   <p>Every combined tower in the game as it looks now, with its recipe, stats and abilities. Rows read left to right through the upgrade tiers. Every tower is a 3D render in the Lance Spire style: a stepped metal base, a body for its family and a glowing gem. A board at the bottom shows them at real size.</p></header>
   <div id="out"></div>
 </div>
 <script>
 'use strict';
+if (/\.github\.io$/i.test(location.hostname)) document.getElementById('sitenav').hidden = false;   // links only make sense on the live site
 const GT = {
   A:{name:'Amethyst',   color:'#9a3cff', dark:'#3f0c8f', light:'#e4ccff', shape:'hex',   proj:14},
   Q:{name:'Aquamarine', color:'#1ec9c4', dark:'#06605f', light:'#c8fbf6', shape:'bag',   proj:11},

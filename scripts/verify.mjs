@@ -21,9 +21,12 @@ const issue = { number: +(process.env.ISSUE_NUMBER || 0), user: process.env.ISSU
 const field = label => { const m = body.match(new RegExp(`###\\s*${label}\\s*\\n+([^\\n]+)`, 'i')); return m ? m[1].trim() : ''; };
 const claim = {
   name: (field('Player name') || 'Anonymous').replace(/[<>`|\r]/g, '').slice(0, 24),
+};
+if (/@|https?:|www\./i.test(claim.name)) claim.name = 'Anonymous';   // never publish an email or link as a name
+Object.assign(claim, {
   wave: parseInt(field('Wave reached'), 10),
   kills: parseInt(field('Kills'), 10),
-};
+});
 
 const checks = [];   // {name, pts, max, note}
 const add = (name, max, pts, note) => checks.push({ name, max, pts, note });
@@ -40,8 +43,12 @@ function finish() {
     scores.push(entry);
     scores.sort((a, b) => b.wave - a.wave || b.kills - a.kills || a.issue - b.issue);
     writeFileSync(SCORES, JSON.stringify(scores, null, 2) + '\n');
+    entry.rank = scores.indexOf(entry) + 1;
   }
-  const verdict = { accepted: '✅ **Accepted.** Added to the leaderboard.', review: '🟡 **Needs review.** A maintainer will take a look.', rejected: '❌ **Not accepted.**' }[decision];
+  const [owner, repo] = (process.env.GITHUB_REPOSITORY || 'owner/repo').split('/');
+  const site = repo === `${owner}.github.io` ? `https://${owner}.github.io` : `https://${owner}.github.io/${repo}`;
+  const lb = entry ? `${site}/leaderboard.html?run=${entry.seed}` : `${site}/leaderboard.html`;
+  const verdict = { accepted: `✅ **Accepted.** You're **#${entry?.rank}** on the [leaderboard](${lb}). It can take a minute or two for the site to update.`, review: '🟡 **Needs review.** A maintainer will take a look.', rejected: '❌ **Not accepted.**' }[decision];
   const rows = checks.map(c => `| ${c.pts === c.max ? '✅' : c.pts > 0 ? '🟡' : '❌'} ${c.name} | ${c.pts}/${c.max} | ${c.note} |`).join('\n');
   const md = [
     `## Score check: ${checks.length ? total : 0}/100`,

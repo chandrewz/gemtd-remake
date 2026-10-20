@@ -20,7 +20,11 @@ main{max-width:820px;margin:0 auto}
 header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
 h1{font-family:var(--f-display);font-weight:400;font-size:32px;letter-spacing:.05em;margin:0}
 h1 span{color:var(--gold)}
+header nav{display:flex;gap:18px}
 header a{color:var(--gold);text-decoration:none;font-weight:600}
+tr.me td{background:#2a2410}
+tr.me td.rank{color:var(--gold)}
+.mine{background:var(--slate);border:1px solid var(--gold-dim);border-radius:8px;padding:10px 14px;margin:0 0 14px;color:var(--fg)}
 header a:hover{text-decoration:underline}
 p.lede{color:var(--muted);margin:0 0 20px;max-width:640px}
 .card{background:var(--slate);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
@@ -46,9 +50,10 @@ td a{color:var(--muted)}
 <main>
   <header>
     <h1>Gem <span>TD</span> Remastered</h1>
-    <a href="./">Play the game →</a>
+    <nav><a href="towers.html">Tower gallery</a><a href="./">Play the game →</a></nav>
   </header>
   <p class="lede">Every score here was submitted from the game's end screen, replayed by a bot with the game's own code, and checked before it was added.</p>
+  <p class="mine" id="mine" hidden></p>
   <div class="filters"><button data-f="best" class="on">Best per player</button><button data-f="all">All runs</button></div>
   <div class="card"><div class="wrap"><table>
     <thead><tr><th>#</th><th>Player</th><th class="num">Wave</th><th class="num">Kills</th><th class="num hide-sm">Lives</th><th class="hide-sm">Version</th><th>Date</th><th></th></tr></thead>
@@ -58,11 +63,12 @@ td a{color:var(--muted)}
 <script>
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let all = [], mode = 'best';
+const runParam = new URLSearchParams(location.search).get('run');
 function render(){
   const list = mode === 'all' ? all : Object.values(all.reduce((m, s) => { const k = (s.github || s.name).toLowerCase(); if (!m[k]) m[k] = s; return m; }, {}));
   const rows = document.getElementById('rows');
   if (!list.length){ rows.innerHTML = '<tr><td colspan="8" class="empty">No verified scores yet. Be the first.</td></tr>'; return; }
-  rows.innerHTML = list.slice(0, 200).map((s, i) => `<tr class="${i < 3 ? 'top' : ''}">
+  rows.innerHTML = list.slice(0, 200).map((s, i) => `<tr class="${i < 3 ? 'top' : ''} ${String(s.seed) === runParam ? 'me' : ''}" ${String(s.seed) === runParam ? 'id="me"' : ''}>
     <td class="rank">${i + 1}</td>
     <td class="name"><b>${esc(s.name)}</b>${s.github ? `<small>@${esc(s.github)}</small>` : ''}</td>
     <td class="num">${s.wave}</td><td class="num">${(s.kills ?? 0).toLocaleString()}</td><td class="num hide-sm">${s.lives ?? ''}</td>
@@ -74,7 +80,13 @@ function render(){
 }
 document.querySelectorAll('.filters button').forEach(b => b.onclick = () => { mode = b.dataset.f; document.querySelectorAll('.filters button').forEach(x => x.classList.toggle('on', x === b)); render(); });
 fetch('scores.json', {cache: 'no-store'}).then(r => r.ok ? r.json() : []).catch(() => []).then(d => {
-  all = (Array.isArray(d) ? d : []).sort((a, b) => b.wave - a.wave || b.kills - a.kills); render(); });
+  all = (Array.isArray(d) ? d : []).sort((a, b) => b.wave - a.wave || b.kills - a.kills);
+  // arriving from the bot's comment: show that run, even if it isn't the player's best
+  if (runParam){ const mine = all.find(s => String(s.seed) === runParam), note = document.getElementById('mine'); note.hidden = false;
+    if (mine){ mode = 'all'; document.querySelectorAll('.filters button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all'));
+      note.innerHTML = `Your run is highlighted: <b>#${all.indexOf(mine) + 1}</b> overall, wave ${mine.wave} with ${(mine.kills||0).toLocaleString()} kills.`; }
+    else note.textContent = 'Your run was accepted but the site hasn’t caught up yet. It usually takes a minute or two, so refresh shortly.'; }
+  render(); const me = document.getElementById('me'); if (me) me.scrollIntoView({block:'center'}); });
 </script>
 </body>
 </html>
