@@ -1166,18 +1166,8 @@ function base(tier, mat=M.dark){
   for (const p of parts) p.isBase = true;   // design() swaps these for a natural outcrop on most towers
   return parts;
 }
-// a low, natural outcrop: weathered rocks with a few crystals of the tower's own colour breaking through
-const ROCK = stoneMat('#5d5852', .12), ROCK2 = stoneMat('#48443f', .1);
-function naturalBase(col, seed){
-  const rnd = mulberryR(seed), m = [];
-  m.push(place(gemBall(.26, ROCK, 7, 4), {sy:.42, ry:rnd()*3, ty:-.02}));
-  for (let i=0;i<3;i++){ const a = rnd()*Math.PI*2, r = .2+rnd()*.08; m.push(place(gemBall(.06+rnd()*.05, i%2?ROCK2:ROCK, 6, 4), {tx:Math.cos(a)*r, tz:Math.sin(a)*r, sy:.6, ty:.0, ry:rnd()*3})); }
-  const g = gemMat(col, .8);
-  for (let i=0;i<3;i++){ const a = i*2.1 + rnd()*.6, r = .16+rnd()*.06;
-    m.push(place(crystalMesh(5, .02+rnd()*.012, .05+rnd()*.05, .04, g, .8), {tx:Math.cos(a)*r, tz:Math.sin(a)*r, ty:.03, rz:-Math.cos(a)*.55, rx:Math.sin(a)*.55})); }
-  return m;
-}
 const KEEP_BASE = {gold:1, starsapphire:1, plutonium:1};   // these read well on their pedestals
+const FOUND = {};   // family -> bespoke foundation builder; families without one keep their pedestal
 const ring = (R, y, mat, o={}) => place(torus(R,.02,22,6,mat),{ty:y,...o});
 const orb = (r, y, hex, o={}) => place(gemBall(r,gemMat(hex),14,8),{ty:y,...o});
 function fins(n, h, mat, r0=.22, w=.13){ const out=[]; for (let i=0;i<n;i++){ const a=i*2*Math.PI/n+.5;
@@ -1206,13 +1196,6 @@ FAM.malachite = (t,d) => {
   m.push(lathe([[.06,.3],[.05,y-.1]],8,gemMat('#0e8a5c',.9)));
   m.push(orb(r,y,col));
   return {m, fx:[['orb',y,r,col]], cam:{pitch:-.4,yaw:.35}};
-};
-FAM.starruby = (t,d) => {
-  const col = t===3 ? '#ff7a2b' : '#ff3b5c', y=[0,.5,.52,.55][t], r=[0,.11,.12,.13][t];
-  const m=[...base(t, t>=2?M.crimson:M.iron)];
-  m.push(lathe([[.1,.3],[.24,.38],[.27,.42],[.25,.43],[.12,.38]],16,t===1?M.iron:M.gold));
-  m.push(orb(r,y,col));
-  return {m, fx:[['fire',.42,[0,.32,.42,.55][t]],['orb',y,r,col]], cam:{pitch:-.45,yaw:.4}};
 };
 FAM.jade = (t,d) => {
   const col='#6ff0b0', m=[...base(t)];
@@ -1282,7 +1265,6 @@ FAM.blackopal = (t,d) => {
 FAM.bloodstone = (t,d) => {
   const col='#2c6a48', m=[...base(t, M.bloodstone)];
   m.push(lathe([[.08,.3],[.05,.4],[.07,.45],[.2,.52],[.22,.56],[.18,.55]],16,M.gold));
-  if (t===2) for (let i=0;i<4;i++){ const a=i*Math.PI/2+.4; m.push(place(crystalMesh(4,.02,.2,.08,gemMat('#ff2b4f',.75)),{tx:Math.cos(a)*.2,tz:Math.sin(a)*.2,ty:.5,rz:-Math.cos(a)*.3,rx:Math.sin(a)*.3})); }
   const y=.68, r=.13; m.push(orb(r,y,col));
   return {m, fx:[['blood',y,r],['orb',y,r,'#ff4d6d']], cam:{pitch:-.45,yaw:.4}};
 };
@@ -1340,6 +1322,33 @@ function pyramid(col, s, grand){
   for (const k of [-1,1]) m.push(place(bladeMesh(.16,.03,.006,M.gold),{tx:k*(r+.06),ty:y,rz:k*1.35,ry:-.4}));
   return {m, fx:[['orb',y,r,col]], cam:{pitch:-.38,yaw:.35}};
 }
+
+// ---- Star Ruby family: a ruby star held above a star-shaped dais; more points and more fire each tier ----
+function starPrism(n, rOut, rIn, h, mat, y0=0, rot=0){ const v=[], f=[], N=2*n;
+  for (const [y,k] of [[y0,1],[y0+h,.9]]) for (let i=0;i<N;i++){ const a=rot+i*Math.PI/n, r=(i%2?rIn:rOut)*k; v.push([Math.cos(a)*r, y, Math.sin(a)*r]); }
+  v.push([0,y0+h+h*.25,0]); const T=v.length-1;
+  for (let i=0;i<N;i++){ const j=(i+1)%N; f.push([i,j,N+j,N+i]); f.push([N+i,N+j,T]); }
+  f.push([...Array(N).keys()].reverse());
+  return {v,f,mat}; }
+const RUBY = {kind:'gem', col:[1,.12,.22], deep:[.3,0,.04], glow:[1,.45,.5], alpha:.86, edge:.08};
+const EMBER = {kind:'gem', col:[1,.55,.12], deep:[.35,.06,0], glow:[1,.8,.4], alpha:.85, edge:.08};
+FAM.starruby = (t,d) => {
+  const n=[0,5,6,8][t], m=[], y=[0,.5,.54,.58][t], R=[0,.16,.18,.21][t];
+  // star dais: dark crimson stone over a gold star, points matching the gem
+  m.push(starPrism(n, .31, .17, .03, M.gold, 0, -Math.PI/2));
+  m.push(starPrism(n, .27, .145, .06, M.lacquer, .03, -Math.PI/2));
+  if (t===3) for (let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; m.push(place(gemBall(.02,EMBER,6,4),{tx:Math.cos(a)*.2,tz:Math.sin(a)*.2,ty:.1})); }
+  // slender gold stem with a star-claw cradle
+  m.push(lathe([[.075,.08],[.05,.14],[.035,y-.18],[.05,y-.12]],8,M.gold));
+  for (let i=0;i<3;i++){ const a=i*2*Math.PI/3; m.push(place(bladeMesh(.1,.012,.006,M.gold),{tx:Math.cos(a)*.03,tz:Math.sin(a)*.03,ty:y-.14,rz:-Math.cos(a)*.5,rx:Math.sin(a)*.5})); }
+  // the star itself: ruby points around a faceted heart, facing the viewer
+  m.push(...starGem(n, R, .03+t*.004, y, RUBY, RUBY, -Math.PI/2));
+  if (t>=2) m.push(...starGem(n, R*.62, .022, y, t===3?EMBER:{...RUBY, col:[.6,.02,.1]}, RUBY, -Math.PI/2+Math.PI/n));
+  if (t>=2) m.push(place(torus(R*1.12,.008,32,4,M.gold),{ty:y,rx:Math.PI/2,ry:-.4}));
+  const fx = [['glow',y,R*.7,t===3?'#ff7a2b':'#ff3b5c']];
+  if (t===3) fx.unshift(['inferno', y-.12, .3, .2]);
+  return {m, fx, cam:{pitch:-.4,yaw:.4}};
+};
 
 // ---- ultimates ----
 /* ---- Koh-i-Noor: a rose-gold spire with amethyst buttresses, crowned by a great pink-violet oval brilliant ---- */
@@ -1505,17 +1514,72 @@ function applyFX(c, fx, x, yb, k, u){
 }
 function mulberryR(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
+/* ---------- bespoke foundations: each family stands on something from its own world ---------- */
+const TAU = Math.PI*2;
+// a flat leaf/petal/feather lying outward at angle a, tilted up by `tilt`
+const petal = (len, w, t, mat, a, tilt, y=0, r0=0) => place(place(bladeMesh(len, w, t, mat), {rz:-(Math.PI/2 - tilt)}), {ry:-a, ty:y, tx:Math.cos(a)*r0, tz:Math.sin(a)*r0});
+const ringOf = (n, fn, off=0) => Array.from({length:n}, (_,i)=>fn(off + i*TAU/n, i));
+const MALA = [stoneMat('#0b4d31',.5), stoneMat('#16935c',.55), stoneMat('#0e6b43',.5), stoneMat('#3fcf8a',.6)];
+const PLAT = {kind:'metal', tint:[.92,.95,1]};
+const ROSEG = {kind:'metal', tint:[1.1,.8,1]};
+const LAVA = {kind:'gem', col:[1,.45,.08], deep:[.35,.05,0], glow:[1,.7,.2], alpha:.9, edge:.04};
+const WATER = {kind:'gem', col:[.2,.85,1], deep:[.0,.15,.25], glow:[.5,.95,1], alpha:.45, edge:.12};
+const NEB = {kind:'gem', col:[.16,.07,.32], deep:[.03,.0,.08], glow:[.7,.45,1], alpha:.75, edge:.08};
+const FROZE = {kind:'gem', col:[.6,1,.85], deep:[.02,.2,.15], glow:[.6,1,.9], alpha:.6, edge:.1};
+const hexPlate = (r, h, mat, y=0) => place(lathe([[r,y],[r,y+h*.7],[r*.9,y+h]],6,mat),{ry:Math.PI/6});
+Object.assign(FOUND, {
+  // polished malachite: banded green slabs stacked like a cut nodule, emerald chips at the edge
+  malachite: (d,t) => [...[0,1,2,3].map(i => place(lathe([[.3-i*.05,i*.028],[.29-i*.05,i*.028+.026]],9,MALA[i]),{ry:i*.4, tx:(i%2)*.012})),
+    ...ringOf(t>=3?5:3, a => place(crystalMesh(6,.022,.05,.04,gemMat('#2fdc9a',.8),.85),{tx:Math.cos(a)*.27,tz:Math.sin(a)*.27,ty:.0,rz:-Math.cos(a)*.5,rx:Math.sin(a)*.5}), .3)],
+  // a jade lotus: broad leaves, a pale jade disc
+  jade: (d,t) => [place(lathe([[.16,0],[.15,.05]],16,M.jade),{}), ...ringOf(8, a => petal(.17,.06,.01,M.jade,a,.18,.02,.08)),
+    ...(t>=3?ringOf(8, a => petal(.11,.045,.01,stoneMat('#9ff0c8',.6),a,.45,.04,.06), TAU/16):[])],
+  // a geode ring: pink crystals growing outward around the root
+  redcrystal: (d,t) => [place(lathe([[.2,0],[.17,.05],[.1,.07]],10,stoneMat('#3a2a33',.3)),{}),
+    ...ringOf(t>=2?10:8, (a,i) => place(crystalMesh(6,.03,.06+(i%3)*.03,.05,gemMat(i%2?'#ff9ab8':'#ff6b8b',.78),.8),{tx:Math.cos(a)*.18,tz:Math.sin(a)*.18,ty:.02,rz:-Math.cos(a)*.75,rx:Math.sin(a)*.75}))],
+  // thorny roots: dark arching thorns with emerald chips
+  darkemerald: (d,t) => [place(gemBall(.12,stoneMat('#13281c',.4),8,5),{sy:.45}),
+    ...ringOf(6, a => petal(.24,.03,.02,stoneMat('#1b3a26',.45),a,.35,.0,.05)),
+    ...ringOf(t>=2?6:3, a => place(crystalMesh(5,.02,.04,.04,gemMat('#2fdc7a',.85)),{tx:Math.cos(a)*.22,tz:Math.sin(a)*.22,ty:.05}), .5)],
+  // a containment pad: octagonal slab, glowing vent ring, hazard posts
+  uranium: (d,t) => [place(lathe([[.32,0],[.32,.05],[.29,.07]],8,M.concrete),{ry:Math.PI/8}), place(torus(.22,.016,24,4,gemMat('#9dff4a',.85)),{ty:.07}),
+    ...ringOf(4, a => place(boxMesh(.045,.1,.045,(Math.round(a*2)%2)?stoneMat('#e8c21a',.3):stoneMat('#1b1b1b',.2)),{tx:Math.cos(a)*.3,tz:Math.sin(a)*.3,ty:.1}), Math.PI/4)],
+  // an obsidian lotus flecked with opal fire
+  blackopal: (d,t) => [place(lathe([[.13,0],[.12,.05]],12,M.obsidian),{}), ...ringOf(6, a => petal(.2,.07,.012,{kind:'gem', col:[.2,.14,.4], deep:[.03,.01,.08], glow:[.6,.4,1], alpha:.85, edge:.14},a,.42,.02,.06)),
+    ...ringOf(t>=2?8:5, (a,i) => place(gemBall(.026,gemMat(['#7a5cff','#ff6fc8','#4ff0e8','#ffd65a'][i%4],.9),6,4),{tx:Math.cos(a)*.2,tz:Math.sin(a)*.2,ty:.08}), .3)],
+  // a stepped bloodstone altar, red drops on its corners
+  bloodstone: (d,t) => [place(boxMesh(.5,.06,.5,M.bloodstone),{ty:.03,ry:.4}), place(boxMesh(.36,.05,.36,stoneMat('#1d3d2b',.4)),{ty:.085,ry:.4}),
+    ...ringOf(4, a => place(gemBall(.032,gemMat('#e0294d',.9),8,5),{tx:Math.cos(a+.4)*.3,tz:-Math.sin(a+.4)*.3,ty:.07}), Math.PI/4)],
+  // frosted hex floe with a gold rim (the obelisk's ice crystals already ring it)
+  yellowsapphire: (d,t) => [hexPlate(.28,.07,FROST), place(torus(.24,.012,22,4,t>=2?M.gold:PLAT),{ty:.07})],
+  // an amethyst lotus around a rose-gold collar
+  kohinoor: (d,t) => [...ringOf(8, a => petal(.2,.065,.012,gemMat('#9a3cff',.75),a,.32,.02,.07)), ...ringOf(8, a => petal(.13,.05,.01,gemMat('#ff9ad5',.75),a,.6,.03,.05), TAU/16),
+    place(torus(.12,.02,18,5,ROSEG),{ty:.05})],
+  // a crown of crimson spikes around a molten pool
+  crownprince: (d,t) => [place(lathe([[.24,0],[.24,.03]],20,LAVA),{}), place(torus(.27,.03,24,6,M.crimson),{ty:.02}),
+    ...ringOf(10, (a,i) => place(lathe([[.03,0],[0,i%2?.09:.15]],4,i%2?M.gold:M.crimson),{tx:Math.cos(a)*.29,tz:Math.sin(a)*.29,ty:.02}))],
+  // a platinum prong setting: six claws rise from a band to cradle the stem
+  cullinan: (d,t) => [place(torus(.22,.025,30,6,PLAT),{ty:.025}), ...ringOf(6, a => place(bladeMesh(.2,.025,.012,PLAT),{tx:Math.cos(a)*.21,tz:Math.sin(a)*.21,ty:.02,rz:-Math.cos(a)*-.55,rx:Math.sin(a)*-.55})),
+    ...ringOf(6, a => place(brilliantMesh(.025,{kind:'gem', col:[.92,.95,1], deep:[.05,.06,.1], glow:[.9,.95,1], alpha:.7, edge:.08},8),{tx:Math.cos(a)*.22,tz:Math.sin(a)*.22,ty:.06}), Math.PI/6)],
+  // a phoenix nest of golden feathers
+  wingsstone: (d,t) => [...ringOf(12, (a,i) => petal(.22-(i%2)*.05,.045,.008,i%2?gemMat('#ffb020',.85):M.gold,a,.62,.0,.07)), place(torus(.08,.02,16,5,M.gold),{ty:.03}),
+    ...ringOf(5, a => place(gemBall(.02,gemMat('#ffc93a',.9),6,4),{tx:Math.cos(a)*.12,tz:Math.sin(a)*.12,ty:.06}))],
+  // frozen ground: a frost plate with emerald-ice spikes bursting outward
+  starofadam: (d,t) => [hexPlate(.3,.04,FROST), ...ringOf(8, (a,i) => place(crystalMesh(5,.022,.04,.1+(i%2)*.05,FROZE,.7),{tx:Math.cos(a)*.24,tz:Math.sin(a)*.24,ty:.03,rz:-Math.cos(a)*.9,rx:Math.sin(a)*.9}))],
+});
+
 function design(key, d){
   const fam = key.replace(/\d+$/, ''), tier = (key.match(/(\d+)$/)||[0,1])[1]|0;
   if (fam==='bryvx') return greatStone();
   if (SECRET_OF[fam]) return secretTower(fam, d);
   const r = FAM[fam] ? FAM[fam](tier||1, d) : FAM.silver(1, d);
-  if (KEEP_BASE[fam] || !r.m.some(x=>x.isBase)) return r;
+  if (KEEP_BASE[fam] || !FOUND[fam] || !r.m.some(x=>x.isBase)) return r;   // only families with a bespoke foundation lose the pedestal
   // drop the pedestal: everything that stood on it moves down onto a natural outcrop
   const DY = -.2, minY = x => Math.min(...x.v.map(p=>p[1]));
   r.m = r.m.filter(x=>!x.isBase).map(x => minY(x) >= .11 ? xform(x, p=>[p[0], p[1]+DY, p[2]]) : x);
   r.fx = r.fx.map(f => typeof f[1]==='number' ? [f[0], f[1]+DY, ...f.slice(2)] : f);
-  r.m.unshift(...naturalBase(d.color || '#ffffff', [...fam].reduce((a,c)=>a*31+c.charCodeAt(0),7)));
+  r.m = r.m.filter(x => Math.max(...x.v.map(p=>p[1])) > .02);   // pedestal trim that sank below ground
+  r.m.unshift(...FOUND[fam](d, tier));
   return r;
 }
 // draws a tower whose footprint centre sits at (x, yb) with cell size u, into context c (already at the right resolution)
