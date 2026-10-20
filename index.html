@@ -2023,14 +2023,18 @@ FAM.starruby = (t,d) => {
   m.push(place(lathe([[Rc*1.1,H*.88],[Rc*1.1,H*.93]],14,MOLTEN),{}));
   // gem-red lava seeping along each ridge crest: faceted nuggets following the edge
   const along = (k, u) => { const a=rot+k*2*Math.PI/n, r=R0+(Rc*1.5-R0)*u, y=H*u, am=AMP*(1-u)*.85+AMP*.15; return [Math.cos(a)*r*(1+am)*1.015, y+.004, Math.sin(a)*r*(1+am)*1.015, a]; };
-  const seg=[0,5,7,9][t], jr = mulberryR(t*977+5);
-  for (let k=0;k<n;k++) for (let s=0;s<seg;s++){ if (jr() < .28) continue;   // seepage is broken, not a dotted line
-    const u=.03+(s+jr()*.6)*.84/seg, [x,y,z,a]=along(k,u), sz=(.012+jr()*.014)*(1-u*.4)+t*.0015, off=(jr()-.5)*.03;
-    m.push(place(gemBall(sz,jr()<.35?MOLTEN2:MOLTEN,6,4),{tx:x-Math.sin(a)*off,ty:y,tz:z+Math.cos(a)*off,sy:.4,sx:1+jr()*.8,ry:-a+jr()})); }
-  // a molten seam where the cone meets the ground, broken into glowing pools
-  const fp=[0,10,13,16][t];
-  for (let i=0;i<fp;i++){ const a=rot+i*2*Math.PI/fp+.15, s=Math.cos(n*(a-rot)), r=R0*(1+AMP*s)*1.0;
-    m.push(place(gemBall(.024+(i%3)*.006,i%2?MOLTEN2:MOLTEN,7,3),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.004,sy:.32,ry:i})); }
+  // molten streams running down each ridge: a tapering ribbon that hugs the crest and wanders slightly
+  const ribbon = (pts, mat) => { const v=[], f=[]; pts.forEach(([x,y,z,w,a])=>{ const tx=-Math.sin(a), tz=Math.cos(a); v.push([x+tx*w,y,z+tz*w],[x-tx*w,y,z-tz*w]); });
+    for (let i=0;i<pts.length-1;i++) f.push([2*i,2*i+1,2*i+3,2*i+2]); return {v,f,mat}; };
+  const jr = mulberryR(t*977+5);
+  for (let k=0;k<n;k++){ const pts=[], wob=jr()*6; const top = .9, bot = [0,.25,.12,.04][t] + jr()*.08;   // higher tiers run further down
+    for (let q=0;q<=14;q++){ const u = top - (top-bot)*q/14, [x,y,z,a] = along(k,u), sway = Math.sin(q*.7+wob)*.006;
+      pts.push([x - Math.sin(a)*sway, y+.003, z + Math.cos(a)*sway, (.006 + .012*(1-q/14)*(.6+u*.6)) * (1+t*.15), a]); }
+    m.push(ribbon(pts, k%2 ? MOLTEN : MOLTEN2)); }
+  // one unbroken molten seam where the cone meets the ground, following its faint star
+  { const pts=[]; for (let q=0;q<=60;q++){ const a=rot+q*2*Math.PI/60, sR=Math.cos(n*(a-rot)), r=R0*(1+AMP*sR)*1.02;
+      pts.push([Math.cos(a)*r, .006, Math.sin(a)*r, .012+t*.003, a+Math.PI/2]); }
+    m.push(ribbon(pts.map(([x,y,z,w,a])=>[x,y,z,w,a]), MOLTEN)); }
   // chunky volcanic slabs: tumbled on the slopes and around the foot
   for (let i=0;i<6+t*2;i++){ const a=i*2.39+.3, u=(i%3)*.25, r=R0*(1.02-u*.55), y=H*u*.9;
     m.push(place(gemBall(.028+(i%3)*.012,[VROCK2,VROCK3,ASH][i%3],5,3),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:y+.01,sy:.6,ry:i*1.3,rx:.3})); }
