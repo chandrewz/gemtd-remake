@@ -31,7 +31,7 @@ On GitHub Pages the game works out which repository to send scores to from its o
 | Every action landed on its recorded tick | 10 |
 | The replay reaches the claimed wave | 30 |
 | Kills match | 10 |
-| Real play time is at least what 3× speed allows | 10 |
+| Real play time is at least what top speed allows | 10 |
 
 **90 or more** is accepted: the score is committed to `scores.json` and the issue is closed. **60 to 89** gets a `needs-review` label for you to look at. Anything lower, a claim more than one wave off, a damaged code or a repeated seed is rejected.
 

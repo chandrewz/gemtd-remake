@@ -194,12 +194,12 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
     <section class="card" id="chanceCard"></section>
     <div class="controls">
       <button id="pauseBtn">Pause</button>
-      <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp3">3×</button>
+      <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button>
       <button id="pathBtn" class="on">Path</button>
       <button id="bookBtn" class="grow">Recipe book</button><button id="lbBtn" hidden>Leaderboard</button><button id="galBtn" hidden>Towers</button>
       <button id="restartBtn">Restart</button>
     </div>
-    <p class="keys"><kbd>Tab</kbd> next gem · <kbd>K</kbd> keep · <kbd>D</kbd> downgrade · <kbd>C</kbd> combine ×2 · <kbd>F</kbd> ×4 · <kbd>N</kbd> new five (repick) · <kbd>S</kbd> special · <kbd>U</kbd> upgrade · <kbd>R</kbd> remove rock · <kbd>G</kbd> buy chances · <kbd>B</kbd> recipes · <kbd>P</kbd> path · <kbd>Space</kbd> pause · <kbd>1</kbd>–<kbd>3</kbd> speed · <kbd>Esc</kbd> deselect</p>
+    <p class="keys"><kbd>Tab</kbd> next gem · <kbd>K</kbd> keep · <kbd>D</kbd> downgrade · <kbd>C</kbd> combine ×2 · <kbd>F</kbd> ×4 · <kbd>N</kbd> new five (repick) · <kbd>S</kbd> special · <kbd>U</kbd> upgrade · <kbd>R</kbd> remove rock · <kbd>G</kbd> buy chances · <kbd>B</kbd> recipes · <kbd>P</kbd> path · <kbd>Space</kbd> pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> speed · <kbd>Esc</kbd> deselect</p>
     <ol class="log" id="log" aria-live="polite"></ol>
   </aside>
 </div>
@@ -1838,8 +1838,21 @@ function base(tier, mat=M.dark){
   const parts = [lathe([[.38*w,0],[.38*w,.05],[.33*w,.06],[.33*w,.1],[.26*w,.11],[.24*w,.15],[.16,.17],[.12,.2],[.12,.3],[.15,.32]],16,mat)];
   parts.push(place(torus(.3*w,.018,20,6, tier>=2 ? M.gold : M.steel),{ty:.105}));
   if (tier>=3) parts.push(place(torus(.36*w,.016,22,6,M.gold),{ty:.05}));
+  for (const p of parts) p.isBase = true;   // design() swaps these for a natural outcrop on most towers
   return parts;
 }
+// a low, natural outcrop: weathered rocks with a few crystals of the tower's own colour breaking through
+const ROCK = stoneMat('#5d5852', .12), ROCK2 = stoneMat('#48443f', .1);
+function naturalBase(col, seed){
+  const rnd = mulberryR(seed), m = [];
+  m.push(place(gemBall(.26, ROCK, 7, 4), {sy:.42, ry:rnd()*3, ty:-.02}));
+  for (let i=0;i<3;i++){ const a = rnd()*Math.PI*2, r = .2+rnd()*.08; m.push(place(gemBall(.06+rnd()*.05, i%2?ROCK2:ROCK, 6, 4), {tx:Math.cos(a)*r, tz:Math.sin(a)*r, sy:.6, ty:.0, ry:rnd()*3})); }
+  const g = gemMat(col, .8);
+  for (let i=0;i<3;i++){ const a = i*2.1 + rnd()*.6, r = .16+rnd()*.06;
+    m.push(place(crystalMesh(5, .02+rnd()*.012, .05+rnd()*.05, .04, g, .8), {tx:Math.cos(a)*r, tz:Math.sin(a)*r, ty:.03, rz:-Math.cos(a)*.55, rx:Math.sin(a)*.55})); }
+  return m;
+}
+const KEEP_BASE = {gold:1, starsapphire:1, plutonium:1};   // these read well on their pedestals
 const ring = (R, y, mat, o={}) => place(torus(R,.02,22,6,mat),{ty:y,...o});
 const orb = (r, y, hex, o={}) => place(gemBall(r,gemMat(hex),14,8),{ty:y,...o});
 function fins(n, h, mat, r0=.22, w=.13){ const out=[]; for (let i=0;i<n;i++){ const a=i*2*Math.PI/n+.5;
@@ -2171,8 +2184,14 @@ function design(key, d){
   const fam = key.replace(/\d+$/, ''), tier = (key.match(/(\d+)$/)||[0,1])[1]|0;
   if (fam==='bryvx') return greatStone();
   if (SECRET_OF[fam]) return secretTower(fam, d);
-  if (FAM[fam]) return FAM[fam](tier||1, d);
-  return FAM.silver(1, d);
+  const r = FAM[fam] ? FAM[fam](tier||1, d) : FAM.silver(1, d);
+  if (KEEP_BASE[fam] || !r.m.some(x=>x.isBase)) return r;
+  // drop the pedestal: everything that stood on it moves down onto a natural outcrop
+  const DY = -.2, minY = x => Math.min(...x.v.map(p=>p[1]));
+  r.m = r.m.filter(x=>!x.isBase).map(x => minY(x) >= .11 ? xform(x, p=>[p[0], p[1]+DY, p[2]]) : x);
+  r.fx = r.fx.map(f => typeof f[1]==='number' ? [f[0], f[1]+DY, ...f.slice(2)] : f);
+  r.m.unshift(...naturalBase(d.color || '#ffffff', [...fam].reduce((a,c)=>a*31+c.charCodeAt(0),7)));
+  return r;
 }
 // draws a tower whose footprint centre sits at (x, yb) with cell size u, into context c (already at the right resolution)
 function drawTower(c, x, yb, u, key, d){
@@ -2554,7 +2573,7 @@ function renderWave(){
   const ai = AORDER.indexOf(w.type);
   const strong = Object.keys(ATK).filter(k=>k!=='X' && ATK[k][ai]>=1.5).map(k=>`${DTYPE_NAME[k]} ×${ATK[k][ai]}`);
   const weak = Object.keys(ATK).filter(k=>k!=='X' && ATK[k][ai]<=.6).map(k=>`${DTYPE_NAME[k]} ×${ATK[k][ai]}`);
-  const mins = Math.round(S.route ? S.route.len / (w.speed/100) : 0);
+  const mins = Math.round(S.route ? S.route.len / (w.speed/100) / BASE_SPEED : 0);
   el.innerHTML = `<h2><span>${S.phase==='wave'?'Current wave':'Next wave'} · ${w.w>50 ? w.w+' · endless' : w.w+'/50'}</span><span>${w.count} ${w.count===1?'unit':'units'}</span></h2>
     <div class="wave-name">${w.name}${w.boss?' <span class="chip" style="border-color:#8a6c2c;color:#f2c35b">Boss</span>':''}${w.fly?' <span class="chip" style="border-color:#7a3d62;color:#ff7cc0">Flying</span>':''}</div>
     <div class="kv">
@@ -2797,7 +2816,7 @@ document.addEventListener('keydown', ev => {
   if (ev.target.tagName==='INPUT') return;
   if (ev.key==='Escape'){ if (!$('bookModal').hidden){ $('bookModal').hidden = true; return; } if (S){ S.sel=null; ui.dirty=true; } }
   if (ev.key===' ' && S && S.started){ ev.preventDefault(); togglePause(); }
-  if (ev.key==='1') setSpeed(1); if (ev.key==='2') setSpeed(2); if (ev.key==='3') setSpeed(3);
+  if (ev.key==='1') setSpeed(1); if (ev.key==='2') setSpeed(2); if (ev.key==='3' || ev.key==='4') setSpeed(4);
   if (!S || S.phase==='lost' || S.phase==='victory' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
   const k = ev.key.length===1 ? ev.key.toUpperCase() : ev.key;
   if (k==='Tab'){ // cycle through this round's gems, or towers that can combine
@@ -2812,10 +2831,10 @@ document.addEventListener('keydown', ev => {
   const a = (ui.acts||[]).find(x=>x.key===k && !x.disabled);
   if (a && $('bookModal').hidden){ ev.preventDefault(); a.fn(); }
 });
-function setSpeed(v){ if (!S) return; S.speed = v; [1,2,3].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }
+function setSpeed(v){ if (!S) return; S.speed = v; [1,2,4].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }
 function togglePause(){ if (!S) return; S.paused = !S.paused; $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause'; $('pauseBtn').classList.toggle('on', S.paused); }
 $('pauseBtn').onclick = togglePause;
-[1,2,3].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
+[1,2,4].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
 $('pathBtn').onclick = ()=>{ ui.showPath = !ui.showPath; $('pathBtn').classList.toggle('on', ui.showPath); };
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
@@ -2840,12 +2859,13 @@ function refreshBest(){ const b = loadBest(); $('bestLine').textContent = b.norm
    ============================================================ */
 let last = performance.now(), uiT = 0;
 const TICK = 1/60;
+const BASE_SPEED = 2;   // 1× in the speed buttons is already twice the original pace; 4× is 8× the original
 function loop(now){
   let dt = Math.min(.1, (now-last)/1000); last = now;
   if (S && !S.paused && S.phase!=='lost' && S.phase!=='victory'){
     // fixed 1/60 s simulation ticks, so a replay of the same inputs plays out identically
-    S.acc = Math.min(S.acc + dt*S.speed, 0.5); let n = 0;
-    while (S.acc >= TICK && n < 40){ S.acc -= TICK; n++;
+    S.acc = Math.min(S.acc + dt*S.speed*BASE_SPEED, 1); let n = 0;
+    while (S.acc >= TICK && n < 80){ S.acc -= TICK; n++;
       try { step(TICK); } catch(err){ console.error(err); S.projs.length = 0; }   // never let one bad frame freeze the game
       if (S.phase==='lost'||S.phase==='victory') break; }
   }
