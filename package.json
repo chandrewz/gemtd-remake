@@ -1,0 +1,11 @@
+{
+  "name": "gemtd",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "verify": "node scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.47.2"
+  }
+}

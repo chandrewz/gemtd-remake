@@ -1,0 +1,65 @@
+name: Verify score
+
+on:
+  issues:
+    types: [opened, edited]
+
+# one at a time, so two accepted scores never race to push scores.json
+concurrency:
+  group: scores
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  verify:
+    if: startsWith(github.event.issue.title, '[score]') && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install headless browser
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.47.2
+          npx playwright install --with-deps chromium
+
+      - name: Replay and score the run
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_USER: ${{ github.event.issue.user.login }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: node scripts/verify.mjs
+
+      - name: Report back on the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          N: ${{ github.event.issue.number }}
+        run: |
+          gh label create verified --color 2da44e --description "Score replayed and accepted" 2>/dev/null || true
+          gh label create needs-review --color d4a72c --description "Score needs a human look" 2>/dev/null || true
+          gh label create rejected --color cf222e --description "Score could not be verified" 2>/dev/null || true
+          gh issue comment "$N" --body-file report.md
+          decision=$(jq -r .decision result.json)
+          case "$decision" in
+            accepted)
+              git config user.name "gemtd-bot"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add scores.json
+              git commit -m "Add score from #$N"
+              git push
+              gh issue edit "$N" --add-label verified --remove-label needs-review,rejected 2>/dev/null || gh issue edit "$N" --add-label verified
+              gh issue close "$N" --reason completed ;;
+            review)
+              gh issue edit "$N" --add-label needs-review ;;
+            *)
+              gh issue edit "$N" --add-label rejected
+              gh issue close "$N" --reason "not planned" ;;
+          esac

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gem TD Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ink:#0b0d15; --slate:#121725; --slate-2:#1a2133; --rule:#2a3350; --fg:#e8eaf3; --muted:#8e95ad;
+  --gold:#f2c35b; --gold-dim:#8a6c2c; --ok:#5fd38d;
+  --f-display:"Marcellus SC", Georgia, serif; --f-ui:"Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--f-ui);font-size:15px;line-height:1.45;padding:28px 16px 48px}
+main{max-width:820px;margin:0 auto}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+h1{font-family:var(--f-display);font-weight:400;font-size:32px;letter-spacing:.05em;margin:0}
+h1 span{color:var(--gold)}
+header a{color:var(--gold);text-decoration:none;font-weight:600}
+header a:hover{text-decoration:underline}
+p.lede{color:var(--muted);margin:0 0 20px;max-width:640px}
+.card{background:var(--slate);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--slate-2)}
+td.num,th.num{text-align:right}
+tr:last-child td{border-bottom:0}
+td.rank{color:var(--muted);width:44px}
+tr.top td.rank{color:var(--gold);font-weight:700}
+td.name b{font-weight:600}
+td.name small{color:var(--muted);margin-left:6px}
+td a{color:var(--muted)}
+.wrap{overflow-x:auto}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.filters{display:flex;gap:8px;margin:0 0 12px}
+.filters button{font:inherit;font-size:14px;color:var(--fg);background:var(--slate-2);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;cursor:pointer}
+.filters button.on{border-color:var(--gold);color:var(--gold)}
+@media (max-width:560px){ .hide-sm{display:none} th,td{padding:8px} }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Gem <span>TD</span> leaderboard</h1>
+    <a href="./">Play the game →</a>
+  </header>
+  <p class="lede">Every score here was submitted from the game's end screen, replayed by a bot with the game's own code, and checked before it was added.</p>
+  <div class="filters"><button data-f="best" class="on">Best per player</button><button data-f="all">All runs</button></div>
+  <div class="card"><div class="wrap"><table>
+    <thead><tr><th>#</th><th>Player</th><th class="num">Wave</th><th class="num">Kills</th><th class="num hide-sm">Lives</th><th class="hide-sm">Version</th><th>Date</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="8" class="empty">Loading scores…</td></tr></tbody>
+  </table></div></div>
+</main>
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let all = [], mode = 'best';
+function render(){
+  const list = mode === 'all' ? all : Object.values(all.reduce((m, s) => { const k = (s.github || s.name).toLowerCase(); if (!m[k]) m[k] = s; return m; }, {}));
+  const rows = document.getElementById('rows');
+  if (!list.length){ rows.innerHTML = '<tr><td colspan="8" class="empty">No verified scores yet. Be the first.</td></tr>'; return; }
+  rows.innerHTML = list.slice(0, 200).map((s, i) => `<tr class="${i < 3 ? 'top' : ''}">
+    <td class="rank">${i + 1}</td>
+    <td class="name"><b>${esc(s.name)}</b>${s.github ? `<small>@${esc(s.github)}</small>` : ''}</td>
+    <td class="num">${s.wave}</td><td class="num">${(s.kills ?? 0).toLocaleString()}</td><td class="num hide-sm">${s.lives ?? ''}</td>
+    <td class="hide-sm">${esc(s.version)}</td><td>${esc(s.date)}</td>
+    <td>${s.issue ? `<a href="../../issues/${s.issue}" data-issue="${s.issue}">#${s.issue}</a>` : ''}</td></tr>`).join('');
+  // link issues to the repo when hosted on GitHub Pages
+  const m = location.hostname.match(/^([a-z0-9-]+)\.github\.io$/i), seg = location.pathname.split('/').filter(Boolean)[0];
+  if (m) rows.querySelectorAll('a[data-issue]').forEach(a => a.href = `https://github.com/${m[1]}/${seg && !seg.endsWith('.html') ? seg : m[1] + '.github.io'}/issues/${a.dataset.issue}`);
+}
+document.querySelectorAll('.filters button').forEach(b => b.onclick = () => { mode = b.dataset.f; document.querySelectorAll('.filters button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+fetch('scores.json', {cache: 'no-store'}).then(r => r.ok ? r.json() : []).catch(() => []).then(d => {
+  all = (Array.isArray(d) ? d : []).sort((a, b) => b.wave - a.wave || b.kills - a.kills); render(); });
+</script>
+</body>
+</html>

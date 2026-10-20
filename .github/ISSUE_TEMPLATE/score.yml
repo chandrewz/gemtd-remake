@@ -1,0 +1,36 @@
+name: Submit a score
+description: Sent from the game's end screen. A bot replays your run and scores it.
+title: "[score] "
+labels: ["score"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The game filled this in for you. Press **Submit new issue** and a bot will replay your game, post a feasibility score and, if it checks out, add you to the leaderboard. Please don't edit the replay code.
+  - type: input
+    id: name
+    attributes:
+      label: Player name
+    validations:
+      required: true
+  - type: input
+    id: wave
+    attributes:
+      label: Wave reached
+    validations:
+      required: true
+  - type: input
+    id: kills
+    attributes:
+      label: Kills
+  - type: input
+    id: version
+    attributes:
+      label: Game version
+  - type: textarea
+    id: replay
+    attributes:
+      label: Replay
+      description: Starts with GTD1.
+    validations:
+      required: true
