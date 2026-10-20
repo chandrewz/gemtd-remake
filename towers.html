@@ -1077,7 +1077,9 @@ function render3D(c, meshes, cx, cy, scale, opts={}){
     const spec = Math.pow(Math.max(0, V.dot(R, L)), 36);
     const fres = Math.pow(1 - Math.max(0, V.dot(nn, view)), 3);
     let rgb, alpha = 1;
-    if (mat.kind==='stone'){
+    if (mat.kind==='emissive'){   // self-lit: molten rock, embers
+      rgb = mat.col.map(v=> v*(.78+.32*diff) + spec*.35); alpha = 1;
+    } else if (mat.kind==='stone'){
       rgb = mat.col.map((v,i)=> v*(.32+.7*diff) + spec*mat.spec + rim*.12);
     } else if (mat.kind==='rainbow'){
       const h = ((n[0]*2.3 + n[1]*1.7 + n[2]*3.1)%1+1)%1, hc=[0,1/3,2/3].map(o=>.55+.45*Math.cos(2*Math.PI*(h+o)));
@@ -1323,47 +1325,50 @@ function pyramid(col, s, grand){
   return {m, fx:[['orb',y,r,col]], cam:{pitch:-.38,yaw:.35}};
 }
 
-// ---- Star Ruby family: a brown volcano with a faint star-ridged cone and a ruby-geode crater, the cut ruby crowning it ----
-const VROCK = stoneMat('#5a3d2c', .3), VROCK2 = stoneMat('#6b4a35', .28), VROCK3 = stoneMat('#432c20', .25), SCORCH = stoneMat('#22160f', .12);
+// ---- Star Ruby family: a low, charcoal volcano; gem-red molten ruby seeps along its edges, the cut ruby crowning the crater ----
+const VROCK = stoneMat('#3a261d', .2), VROCK2 = stoneMat('#4f3426', .35), VROCK3 = stoneMat('#25180f', .3), ASH = stoneMat('#4a3d36', .25), SCORCH = stoneMat('#1c1512', .12);
 const RUBY = {kind:'gem', col:[1,.1,.2], deep:[.3,0,.04], glow:[1,.45,.5], alpha:.86, edge:.1};
-const RUBYD = {kind:'gem', col:[.75,.03,.12], deep:[.2,0,.03], glow:[1,.3,.35], alpha:.9, edge:.08};
+const MOLTEN = {kind:'emissive', col:[1,.1,.12]};   // glowing gem-red lava
+const MOLTEN2 = {kind:'emissive', col:[1,.32,.14]};
 const EMBERC = {kind:'gem', col:[1,.5,.12], deep:[.35,.06,0], glow:[1,.8,.4], alpha:.85, edge:.1};
-// a cone whose cross-section bulges into n soft ridges: a star you notice only on a second look
 function ridgedCone(n, prof, amp, mat, rot=0){ const v=[], f=[], N=n*4;
-  prof.forEach(([r,y],k)=>{ const am = amp*(1-k/(prof.length-1))*.9 + amp*.1;
+  prof.forEach(([r,y],k)=>{ const am = amp*(1-k/(prof.length-1))*.85 + amp*.15;
     for (let i=0;i<N;i++){ const a=rot+i*2*Math.PI/N, s=Math.cos(n*(a-rot)); v.push([Math.cos(a)*r*(1+am*s), y, Math.sin(a)*r*(1+am*s)]); } });
   for (let k=0;k<prof.length-1;k++) for (let i=0;i<N;i++){ const j=(i+1)%N; f.push([k*N+i,k*N+j,(k+1)*N+j,(k+1)*N+i]); }
   f.push([...Array(N).keys()].reverse());
   return {v,f,mat}; }
 FAM.starruby = (t,d) => {
-  const m=[], H=[0,.22,.27,.32][t], R0=[0,.31,.34,.37][t], Rc=[0,.085,.095,.105][t], n=5, rot=-Math.PI/2;
-  m.push(lathe([[.44,0],[.44,.006]],28,SCORCH));
-  // the cone, banded into rock strata
-  m.push(ridgedCone(n, [[R0,.004],[R0*.84,H*.26],[R0*.62,H*.55],[R0*.4,H*.8],[Rc*1.4,H],[Rc*1.15,H*.96]], .16, VROCK, rot));
-  m.push(ridgedCone(n, [[R0*.86,H*.22],[R0*.84,H*.26]], .15, VROCK3, rot));
-  m.push(ridgedCone(n, [[R0*.64,H*.52],[R0*.62,H*.55]], .12, VROCK2, rot));
-  m.push(ridgedCone(n, [[R0*.42,H*.77],[R0*.4,H*.8]], .1, VROCK3, rot));
-  // boulders tumbled around the foot
-  for (let i=0;i<7+t;i++){ const a=i*2.7+.4, r=R0*(.95+(i%3)*.06);
-    m.push(place(gemBall(.025+(i%3)*.012, i%2?VROCK2:VROCK3, 6, 4),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.012,sy:.7,ry:i})); }
-  // geode rim: short ruby crystals splayed outward so the jewel stays in view
-  const nr=[0,8,10,12][t];
-  for (let i=0;i<nr;i++){ const a=i*2*Math.PI/nr+.2, r=Rc*1.2, h=.03+((i*7)%3)*.012+t*.006;
-    m.push(place(crystalMesh(5,.016+t*.002,h,h*.6,i%2?RUBYD:(t===3&&i%3===0?EMBERC:RUBY),.75),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:H*.93,rz:-Math.cos(a)*.85,rx:Math.sin(a)*.85})); }
-  // the jewel: a cut ruby lifted proud of the crater on a ruby pool
-  m.push(place(lathe([[Rc*1.05,H*.9],[Rc*1.05,H*.94]],14,RUBYD),{}));
-  const yj = H*1.0 + Rc*.5;
+  const m=[], H=[0,.2,.23,.27][t], R0=[0,.3,.33,.36][t], Rc=[0,.085,.095,.105][t], n=5, rot=-Math.PI/2, AMP=.08;
+  const prof = [[R0,.004],[R0*.82,H*.3],[R0*.58,H*.62],[Rc*1.5,H],[Rc*1.2,H*.95]];
+  m.push(lathe([[.46,0],[.46,.006]],28,SCORCH));
+  m.push(ridgedCone(n, prof, AMP, VROCK, rot));
+  m.push(ridgedCone(n, [[Rc*1.62,H*.97],[Rc*1.5,H],[Rc*1.2,H*.95]], AMP*.4, ASH, rot));   // ash crust on the lip
+  // molten ruby rim around the crater and a pool beneath the jewel
+  m.push(place(torus(Rc*1.32,.016+t*.002,22,5,MOLTEN2),{ty:H*.97}));
+  m.push(place(lathe([[Rc*1.1,H*.88],[Rc*1.1,H*.93]],14,MOLTEN),{}));
+  // gem-red lava seeping along each ridge crest: faceted nuggets following the edge
+  const along = (k, u) => { const a=rot+k*2*Math.PI/n, r=R0+(Rc*1.5-R0)*u, y=H*u, am=AMP*(1-u)*.85+AMP*.15; return [Math.cos(a)*r*(1+am)*1.015, y+.004, Math.sin(a)*r*(1+am)*1.015, a]; };
+  const seg=[0,5,7,9][t], jr = mulberryR(t*977+5);
+  for (let k=0;k<n;k++) for (let s=0;s<seg;s++){ if (jr() < .28) continue;   // seepage is broken, not a dotted line
+    const u=.03+(s+jr()*.6)*.84/seg, [x,y,z,a]=along(k,u), sz=(.012+jr()*.014)*(1-u*.4)+t*.0015, off=(jr()-.5)*.03;
+    m.push(place(gemBall(sz,jr()<.35?MOLTEN2:MOLTEN,6,4),{tx:x-Math.sin(a)*off,ty:y,tz:z+Math.cos(a)*off,sy:.4,sx:1+jr()*.8,ry:-a+jr()})); }
+  // a molten seam where the cone meets the ground, broken into glowing pools
+  const fp=[0,10,13,16][t];
+  for (let i=0;i<fp;i++){ const a=rot+i*2*Math.PI/fp+.15, s=Math.cos(n*(a-rot)), r=R0*(1+AMP*s)*1.0;
+    m.push(place(gemBall(.024+(i%3)*.006,i%2?MOLTEN2:MOLTEN,7,3),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.004,sy:.32,ry:i})); }
+  // chunky volcanic slabs: tumbled on the slopes and around the foot
+  for (let i=0;i<6+t*2;i++){ const a=i*2.39+.3, u=(i%3)*.25, r=R0*(1.02-u*.55), y=H*u*.9;
+    m.push(place(gemBall(.028+(i%3)*.012,[VROCK2,VROCK3,ASH][i%3],5,3),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:y+.01,sy:.6,ry:i*1.3,rx:.3})); }
+  // geode rim crystals, short and splayed so the jewel shows
+  const nr=[0,6,8,10][t];
+  for (let i=0;i<nr;i++){ const a=i*2*Math.PI/nr+.2, r=Rc*1.25, h=.026+((i*7)%3)*.01+t*.005;
+    m.push(place(crystalMesh(5,.014+t*.002,h,h*.6,t===3&&i%3===0?EMBERC:RUBY,.75),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:H*.96,rz:-Math.cos(a)*.95,rx:Math.sin(a)*.95})); }
+  // the jewel
+  const yj = H + Rc*.55;
   m.push(place(brilliantMesh(Rc*1.05,{kind:'gem', col:[.95,.04,.14], deep:[.28,0,.03], glow:[1,.35,.4], alpha:.93, edge:.12},16),{ty:yj,rx:.25}));
-  // ruby clusters breaking through the flanks along the ridges
-  const fl=[0,2,3,5][t];
-  for (let i=0;i<fl;i++){ const a=rot+i*2*Math.PI/n+.0, r=R0*(.58+(i%2)*.12), y=H*(.32-(i%2)*.12);
-    for (let k=0;k<3;k++) m.push(place(crystalMesh(5,.018+k*.004,.035+k*.018,.03,k===1?RUBYD:RUBY,.8),{tx:Math.cos(a)*r+(k-1)*.014,tz:Math.sin(a)*r,ty:y,rz:-Math.cos(a)*(.7+k*.2),rx:Math.sin(a)*(.7+k*.2)})); }
-  // ruby chips scattered on the scorched ground
-  for (let i=0;i<4+t*2;i++){ const a=i*2.4+.7, r=R0*1.1+(i%3)*.02;
-    m.push(place(gemBall(.011+(i%2)*.005,i%3?RUBYD:RUBY,6,4),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.01})); }
-  const fx = [['glow',yj,Rc*1.2,'#ff2038']];
+  const fx = [['glow',yj,Rc*1.3,'#ff2038'], ['glow',H*.97,Rc*1.6,'#ff1a1a']];
   if (t===3) fx.push(['embers', yj, .12]);
-  return {m, fx, cam:{pitch:-.48,yaw:.4}};
+  return {m, fx, cam:{pitch:-.5,yaw:.4}};
 };
 
 // ---- ultimates ----
