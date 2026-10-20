@@ -199,7 +199,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <button id="bookBtn" class="grow">Recipe book</button><button id="lbBtn" hidden>Leaderboard</button><button id="galBtn" hidden>Towers</button>
       <button id="restartBtn">Restart</button>
     </div>
-    <p class="keys"><kbd>Tab</kbd> next gem · <kbd>K</kbd> keep · <kbd>D</kbd> downgrade · <kbd>C</kbd> combine ×2 · <kbd>F</kbd> ×4 · <kbd>N</kbd> new five (repick) · <kbd>S</kbd> special · <kbd>U</kbd> upgrade · <kbd>R</kbd> remove rock · <kbd>G</kbd> buy chances · <kbd>B</kbd> recipes · <kbd>P</kbd> path · <kbd>Space</kbd> pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> speed · <kbd>Esc</kbd> deselect</p>
+    <p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Recipes · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> Speed · <kbd>Esc</kbd> Deselect</p>
     <ol class="log" id="log" aria-live="polite"></ol>
   </aside>
 </div>
@@ -2683,14 +2683,11 @@ function renderPhase(){
   const el = $('phase'); if (!S) { el.innerHTML = ''; return; }
   let h = '';
   if (S.phase==='build') h = `<strong>Place gem ${S.placed+1} of 5</strong><em>Click an empty tile or a rock. Gems block the path, so build a maze.</em>`;
-  else if (S.phase==='select'){ const rc = repickCost();
-    h = `<strong>Choose a gem to keep</strong><em>Click one of the five new gems. The rest become rocks and the wave starts.</em>
-      <button id="repickBtn" style="margin-top:8px" ${S.gold<rc?'disabled':''}>Repick: lift these 5 off and place new ones · ${rc} gold <kbd>N</kbd></button>`; }
+  else if (S.phase==='select') h = `<strong>Choose a gem to keep</strong><em>Click one of the five new gems. The rest become rocks and the wave starts.</em>`;
   else if (S.phase==='wave') h = `<strong>Wave ${S.wave} in progress</strong><em>${S.enemies.length + S.spawnLeft} creep${S.enemies.length+S.spawnLeft===1?'':'s'} left. You can still combine and upgrade towers.</em>`;
   else if (S.phase==='victory') h = `<strong>Victory</strong><em>All fifty waves defended.</em>`;
   else if (S.phase==='lost') h = `<strong>The castle has fallen</strong><em>Reached wave ${S.wave}.</em>`;
   el.innerHTML = h;
-  const rb = $('repickBtn'); if (rb) rb.onclick = repickDraft;
 }
 function renderWave(){
   const el = $('waveCard'); if (!S) return;
@@ -2752,6 +2749,7 @@ function renderInspector(){
       if (n>=4) acts.push({label:`Combine ×4 into ${DEFS[upKey(t,2)].name}`, key:'F', fn:()=>combineDup(t,4)});
     }
     for (const {R,used} of recipesFor(t,true)) acts.push({label:`Combine into ${DEFS[R.to].name}`, sub:'Turns into rocks: '+used.map(u=>partChip(u.key)).join(''), fn:()=>combineRecipe(t,R,used), special:true});
+    if (S.phase==='select'){ const rc = repickCost(); acts.push({label:`Repick all 5 gems for ${rc} gold`, key:'N', fn:repickDraft, disabled:S.gold<rc}); }
   } else if (!t.draft){
     if (!boardCombineOpen() && RECIPES.some(R=>R.parts.includes(t.key))) acts.push({label:'Board combines open once this round’s gems are placed and one is kept', disabled:true});
     for (const {R,used} of recipesFor(t,false)) acts.push({label:`Combine into ${DEFS[R.to].name}`, sub:'Turns into rocks: '+used.map(u=>partChip(u.key)).join(''), fn:()=>combineRecipe(t,R,used), special:true});
