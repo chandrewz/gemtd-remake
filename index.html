@@ -2548,14 +2548,6 @@ function frame(){
     ctx.save(); ctx.setLineDash([4,4]);
     for (const a of auras){ ctx.beginPath(); ctx.arc(cx,cy,U(a.r)*CS,0,Math.PI*2); ctx.strokeStyle = hexA(d.color,.8); ctx.lineWidth=1.2; ctx.stroke(); if(!d.dmg){ ctx.fillStyle=hexA(d.color,.06); ctx.fill(); } }
     ctx.restore();
-    // aura links: sources feeding this tower (solid) and towers this tower boosts (dashed)
-    ctx.save(); ctx.lineWidth = 1.4;
-    for (const x of (sel.auraIn||[])){ if (x.src===sel || !S.towers.includes(x.src)) continue; const sx=(x.src.x+.5)*CS, sy=(x.src.y+.5)*CS;
-      ctx.strokeStyle = hexA(DEFS[x.src.key].color,.9); ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(cx,cy); ctx.stroke();
-      ctx.beginPath(); ctx.arc(sx,sy,CS*.55,0,Math.PI*2); ctx.stroke(); }
-    if (d.spdAura || d.dmgAura){ ctx.setLineDash([3,3]); ctx.strokeStyle = hexA(d.color,.75);
-      for (const o of S.towers){ if (o===sel || !(o.auraIn||[]).some(x=>x.src===sel)) continue; ctx.strokeRect(o.x*CS+2,o.y*CS+2,CS-4,CS-4); } }
-    ctx.restore();
   } else if (sel && sel.key==='rock'){
     ctx.strokeStyle = '#f2c35b'; ctx.lineWidth = 2; ctx.strokeRect(sel.x*CS+1, sel.y*CS+1, CS-2, CS-2);
   }
