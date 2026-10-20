@@ -153,7 +153,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
           <p>Fifty waves, then endless. One castle. Build the maze out of the gems you are dealt.</p>
           <ol>
             <li>Each round you place five random gems. Every gem blocks the path, so place them to build a maze.</li>
-            <li>Keep one gem (or keep it downgraded one quality). The other four turn into rocks that still block. Don't like your five? Pay gold to lift them off and place five new ones. You can build on rocks too.</li>
+            <li>Keep one gem (or keep it downgraded one quality). The other four turn into rocks that still block. Don't like your five? Pay gold to lift them off and place five new ones. Click a rock and press R to clear it.</li>
             <li>Two identical gems combine one quality higher. Four identical gems combine two qualities higher.</li>
             <li>Gems that match a recipe combine into special towers. Open the recipe book to plan.</li>
             <li>Towers rank up every 10 kills for extra damage. Combining keeps the kills.</li>
@@ -497,7 +497,7 @@ const LS_KEY = 'gemtd-web-best';
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.20c';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.20d';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
@@ -576,7 +576,7 @@ function canPlace(x,y){
   if (x<0||y<0||x>=GW||y>=GH) return {ok:false, why:'Off the board'};
   const i = IDX(x,y);
   if (NOBUILD[i]) return {ok:false, why: CPCELL[i]>=0 ? 'Checkpoints can’t be built on' : 'Can’t build on the portal or castle'};
-  if (S.occ[i] && S.occ[i].key==='rock') return {ok:true, route:S.route, rock:S.occ[i]};   // building on a rock never changes the path
+  if (S.occ[i] && S.occ[i].key==='rock') return {ok:false, why:'Remove the rock first: click it, then press R'};
   if (S.occ[i]) return {ok:false, why:'Tile is occupied'};
   const r = computeRoute(blockedMap(i));
   if (!r) return {ok:false, why:'That would block the path'};
@@ -2669,12 +2669,18 @@ function miniSprite(key){
   if (!portraits.has(id)){
     let img;
     if (d.kind==='gem'){ img = document.createElement('canvas'); img.width = c.width; img.height = c.height; Art.drawGem(img.getContext('2d'), c.width/2, c.height/2, c.width*.46, d.type, d.q, 0); }
-    else if (tall){ const cell = c.height/2.45; img = Tower3D.towerSprite(key, d, cell, cell*1.7, cell*2.45, cell*.3); }
+    else if (tall){ const cell = c.height/2.45*2; img = Tower3D.towerSprite(key, d, cell, cell*1.7, cell*2.45, cell*.3); }   // rendered at 2x, then cropped to fit
     else img = makeSprite(key, 1);
     portraits.set(id, img);
   }
   const img = portraits.get(id);
-  if (tall){ const k = Math.min(c.width/img.width, c.height/img.height); g.drawImage(img, (c.width-img.width*k)/2, c.height-img.height*k, img.width*k, img.height*k); }
+  if (tall){
+    if (!img.bb){   // tight box around the solid parts of the render, ignoring soft glows
+      const d2 = img.getContext('2d').getImageData(0,0,img.width,img.height).data; let x0=img.width, y0=img.height, x1=0, y1=0;
+      for (let y=0;y<img.height;y++) for (let x=0;x<img.width;x++){ if (d2[(y*img.width+x)*4+3] > 110){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
+      img.bb = x1>x0 ? [x0,y0,x1-x0+1,y1-y0+1] : [0,0,img.width,img.height]; }
+    const [bx,by,bw,bh] = img.bb, pad = .08, k = Math.min(c.width*(1-2*pad)/bw, c.height*(1-2*pad)/bh);
+    g.drawImage(img, bx, by, bw, bh, (c.width-bw*k)/2, (c.height-bh*k)/2, bw*k, bh*k); }
   else g.drawImage(img, 0, 0, c.width, c.height);
   return c;
 }
@@ -2682,7 +2688,7 @@ function miniSprite(key){
 function renderPhase(){
   const el = $('phase'); if (!S) { el.innerHTML = ''; return; }
   let h = '';
-  if (S.phase==='build') h = `<strong>Place gem ${S.placed+1} of 5</strong><em>Click an empty tile or a rock. Gems block the path, so build a maze.</em>`;
+  if (S.phase==='build') h = `<strong>Place gem ${S.placed+1} of 5</strong><em>Click an empty tile. Gems block the path, so build a maze. Click a rock and press R to clear it.</em>`;
   else if (S.phase==='select') h = `<strong>Choose a gem to keep</strong><em>Click one of the five new gems. The rest become rocks and the wave starts.</em>`;
   else if (S.phase==='wave') h = `<strong>Wave ${S.wave} in progress</strong><em>${S.enemies.length + S.spawnLeft} creep${S.enemies.length+S.spawnLeft===1?'':'s'} left. You can still combine and upgrade towers.</em>`;
   else if (S.phase==='victory') h = `<strong>Victory</strong><em>All fifty waves defended.</em>`;
@@ -2917,7 +2923,7 @@ cv.addEventListener('mousemove', ev => {
   const {x,y} = cellAt(ev); const k = x+','+y+','+S.towers.length;
   if (k===hoverKey) return; hoverKey = k;
   if (x<0||y<0||x>=GW||y>=GH){ hover=null; return; }
-  if (S.occ[IDX(x,y)] && S.occ[IDX(x,y)].key!=='rock'){ hover = null; return; }
+  if (S.occ[IDX(x,y)]){ hover = null; return; }
   const c = canPlace(x,y); hover = {x,y,ok:c.ok,why:c.why,route:c.route};
 });
 cv.addEventListener('mouseleave', ()=>{ hover=null; hoverKey=''; });
@@ -2925,12 +2931,11 @@ cv.addEventListener('click', ev => {
   if (!S || S.phase==='lost' || S.phase==='victory') return;
   const {x,y} = cellAt(ev); if (x<0||y<0||x>=GW||y>=GH) return;
   const t = S.occ[IDX(x,y)];
-  if (t && t.key==='rock' && S.phase==='build' && !ev.shiftKey){ placeGem(x,y); hoverKey=''; hover=null; return; }   // build over rocks
   if (t){ S.sel = t; ui.dirty = true; return; }
   if (S.phase==='build'){ placeGem(x,y); hoverKey=''; hover=null; return; }
   S.sel = null; ui.dirty = true;
 });
-// right-click (or shift-click) selects anything, including rocks while placing
+// right-click selects anything too
 cv.addEventListener('contextmenu', ev => {
   ev.preventDefault(); if (!S) return;
   const {x,y} = cellAt(ev); if (x<0||y<0||x>=GW||y>=GH) return;
