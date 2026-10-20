@@ -99,7 +99,7 @@ for (const t of TYPES) for (let q=1;q<=6;q++){
              air:t!=='D', ground:t!=='A', color:GT[t].color, proj:GT[t].proj};
   if (t==='D') d.crit = {c:.25, m:2};
   if (t==='E'){ const [p,du,dps]=E_POISON[q-1]; d.poison = {pct:p, dur:du, dps}; }
-  if (t==='O'){ const [p,r]=O_AURA[q-1]; d.spdAura = {pct:p, r}; d.range = r; }   // opals attack exactly as far as their aura reaches
+  if (t==='O'){ const [p]=O_AURA[q-1]; d.spdAura = {pct:p, r:d.range}; }   // speed auras don't stack, so an opal's aura reaches as far as it attacks
   if (t==='R') d.splash = {r:R_SPLASH[q-1], pct:.5};
   if (t==='S') d.frost = {pct:.2, dur:3};
   if (t==='T') d.multi = T_MULTI[q-1];
@@ -134,8 +134,8 @@ sp('pinkdiamond1',{name:'Pink Diamond', tier:1, dtype:'D', color:'#ff9ad5', rang
 sp('pinkdiamond2',{name:'Great Pink Diamond', tier:2, dtype:'D', color:'#ffb8e3', range:850, cd:.65, dmg:174, dice:51, air:false, crit:{c:.1,m:8}});
 sp('paraiba1', {name:'Paraiba Tourmaline', tier:1, dtype:'Q', color:'#33e0ff', range:850, cd:.75, dmg:5, dice:79, nd:5, armorAura:{amt:4,r:600,ground:true}, nova:{c:.2,dmg:200,r:2}, upg:{to:'paraiba2',cost:350}});
 sp('paraiba2', {name:'Paraiba Tourmaline Facet', tier:2, dtype:'Q', color:'#6aeaff', range:850, cd:.75, dmg:25, dice:79, nd:5, armorAura:{amt:6,r:650,ground:true}, nova:{c:.2,dmg:250,r:2.2}});
-sp('blackopal1',{name:'Black Opal', tier:1, dtype:'O', color:'#7a5cff', range:143, cd:1, dmg:24, dice:1, dmgAura:{pct:.3,r:143}, upg:{to:'blackopal2',cost:300}});
-sp('blackopal2',{name:'Mystic Black Opal', tier:2, dtype:'O', color:'#9b84ff', range:171, cd:1, dmg:49, dice:1, dmgAura:{pct:.3,r:171}});
+sp('blackopal1',{name:'Black Opal', tier:1, dtype:'O', color:'#7a5cff', range:800, cd:1, dmg:24, dice:1, dmgAura:{pct:.3,r:800}, upg:{to:'blackopal2',cost:300}});
+sp('blackopal2',{name:'Mystic Black Opal', tier:2, dtype:'O', color:'#9b84ff', range:1000, cd:1, dmg:49, dice:1, dmgAura:{pct:.3,r:1000}});
 sp('bloodstone1',{name:'Bloodstone', tier:1, dtype:'R', color:'#c3203f', range:700, cd:.5, dmg:67, dice:1, splash:{r:1.4,pct:.5}, burn:{dps:135,r:200}, upg:{to:'bloodstone2',cost:250}});
 sp('bloodstone2',{name:'Ancient Bloodstone', tier:2, dtype:'R', color:'#e0294d', range:700, cd:.8, dmg:81, dice:20, crit:{c:.15,m:3}, splash:{r:1.5,pct:.5}, burn:{dps:180,r:250}});
 sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:99, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.2,dur:3}, upg:{to:'yellowsapphire2',cost:250}});
@@ -148,7 +148,7 @@ sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', ran
 sp('crownprince',{name:'Crown Prince Ruby', tier:4, dtype:'X', color:'#ff2e4d', range:800, cd:.6, dmg:260, dice:90, crit:{c:.2,m:3}, splash:{r:1.6,pct:.6}, burn:{dps:420,r:330}});
 sp('plutonium',  {name:'Plutonium Core', tier:4, dtype:'X', color:'#b6ff2e', range:700, cd:.4, dmg:140, dice:40, multi:7, burn:{dps:520,r:300}, radslow:{pct:.6,r:300}});
 sp('cullinan',   {name:'Diamond Cullinan', tier:4, dtype:'X', color:'#f5fbff', range:900, cd:.9, dmg:900, dice:450, crit:{c:.3,m:3}});
-sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:260, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, dmgAura:{pct:.3,r:260}});
+sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, dmgAura:{pct:.3,r:260}});
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
 sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
