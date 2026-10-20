@@ -2,7 +2,7 @@
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta charset="utf-8">
-<title>Gem TD Web</title>
+<title>Gem TD Remastered</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,6 +43,8 @@ canvas#board{display:block;touch-action:manipulation;cursor:crosshair}
 .brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .brand h1{font-family:var(--f-display);font-weight:400;font-size:30px;letter-spacing:.06em;margin:0;line-height:1}
 .brand h1 span{color:var(--gold)}
+.rm2{display:block;font-family:var(--f-ui);font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.brand h1 .rm{display:block;font-style:normal;font-family:var(--f-ui);font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);margin-top:4px}
 .brand small{color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
 .stat{background:var(--slate);padding:8px 10px;display:flex;flex-direction:column;gap:2px}
@@ -147,7 +149,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <div class="toast" id="toast"></div>
       <div class="overlay" id="startOverlay">
         <div class="box">
-          <h2>Gem <span>TD</span></h2>
+          <h2>Gem <span>TD</span> <small class="rm2">Remastered</small></h2>
           <p>Fifty waves, then endless. One castle. Build the maze out of the gems you are dealt.</p>
           <ol>
             <li>Each round you place five random gems. Every gem blocks the path, so place them to build a maze.</li>
@@ -179,7 +181,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
   </main>
 
   <aside class="panel">
-    <div class="brand"><h1>Gem <span>TD</span></h1><small id="diffLabel">50 waves + endless</small></div>
+    <div class="brand"><h1>Gem <span>TD</span><em class="rm">Remastered</em></h1><small id="diffLabel">50 waves + endless</small></div>
     <div class="stats">
       <div class="stat"><span>Wave</span><b id="sWave">1</b></div>
       <div class="stat lives"><span>Lives</span><b id="sLives">100</b></div>

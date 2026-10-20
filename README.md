@@ -1,4 +1,4 @@
-# Gem TD
+# Gem TD Remastered
 
 A single-player web Gem TD that mixes the Warcraft III original, the Flash/iOS port and the Dota 2 version. Everything is static, so it runs on GitHub Pages. Scores are submitted as GitHub issues and verified by a GitHub Action that replays the whole game.
 
