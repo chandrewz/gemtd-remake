@@ -222,6 +222,18 @@ function hexN(n){ // hexagon with n points spread along its edges (so facet coun
 }
 const octRect = (w,h,cut) => [[-w+cut,-h],[w-cut,-h],[w,-h+cut],[w,h-cut],[w-cut,h],[-w+cut,h],[-w,h-cut],[-w,-h+cut]];
 const NPTS = [0,9,12,14,16,16,16];          // outline detail by quality
+// one silhouette per quality, shared by every gem type: colour says the type, shape says the level
+function polyN(sides, per, rot, r=1){ const V = ring(sides, r, r, rot), P = [];
+  for (let i=0;i<sides;i++){ const a=V[i], b=V[(i+1)%sides]; for (let k=0;k<per;k++){ const t=k/per; P.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]); } }
+  return P; }
+const QSHAPE = [null,
+  () => ring(9,.95,.95),                                   // Chipped: a rough broken shard (jagged and notched below)
+  () => polyN(3, 4, -Math.PI/2, 1.12).map(([x,y])=>[x,y+.14]),   // Flawed: triangle (trillion)
+  () => polyN(4, 4, -Math.PI/2, 1.04),                    // Normal: diamond (square on its point)
+  () => polyN(6, 3, -Math.PI/2, 1.0),                     // Flawless: hexagon
+  () => polyN(8, 2, -Math.PI/2 + Math.PI/8, 1.0),         // Perfect: octagon, gold rimmed
+  () => ring(20,.98,.98),                                  // Great: round brilliant with its halo
+];
 const CUT = {
   D:{kind:'brilliant', fire:true, outline:q=>ring(NPTS[q],.98,.98)},
   R:{kind:'brilliant', outline:q=>cushion(NPTS[q])},
@@ -351,12 +363,12 @@ function stepCut(c, P, cx, cy, s, p, q, rnd){
   c.fillStyle=`rgba(255,255,255,${.06+q*.015})`; poly(c,[[-1,-.25],[-.25,-1],[.02,-1],[-1,.02]],cx,cy,s); c.fill(); c.restore();
 }
 /* ---------------- opal ---------------- */
-function opal(c, cx, cy, s, q, rnd, time){
+function opal(c, cx, cy, s, q, rnd, time, P){
   const rx=s*.82, ry=s*.98, black = q===6;
   const body = black ? ['#3a4a8a','#1a2250','#0b1030'] : q===1 ? ['#e9e6e8','#c8c3c8','#8f8a92'] : q===2 ? ['#fbf6f9','#e2d8e0','#a99fac'] : q>=4 ? ['#f2fbff','#d6e8f5','#97aec4'] : ['#fffafc','#efe2ea','#b9a6b6'];
-  c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+  poly(c,P,cx,cy,s);
   const g=c.createRadialGradient(cx-rx*.35,cy-ry*.4,s*.05,cx,cy,s*1.05); g.addColorStop(0,body[0]); g.addColorStop(.6,body[1]); g.addColorStop(1,body[2]); c.fillStyle=g; c.fill();
-  c.save(); c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); c.clip();
+  c.save(); poly(c,P,cx,cy,s); c.clip();
   const hues=[125,165,195,225,290,330,30,55];
   if (q<=3){ // soft pin-fire flecks
     const n=[0,5,8,14][q], sat=[0,35,60,80][q];
@@ -378,7 +390,7 @@ function opal(c, cx, cy, s, q, rnd, time){
     const v=c.createRadialGradient(cx,cy,s*.2,cx,cy,s); v.addColorStop(0,'rgba(255,255,255,0)'); v.addColorStop(1, black?'rgba(5,8,25,.55)':'rgba(255,255,255,.35)'); c.fillStyle=v; c.fillRect(cx-s,cy-s,s*2,s*2);
   }
   c.restore();
-  c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); c.lineWidth=Math.max(1,s*.05); c.strokeStyle= black?'#05081a':'#6f6474'; c.stroke();
+  poly(c,P,cx,cy,s); c.lineWidth=Math.max(1,s*.05); c.strokeStyle= black?'#05081a':'#6f6474'; c.stroke();
   c.beginPath(); c.ellipse(cx-rx*.25,cy-ry*.45,rx*.45,ry*.17,-.5,0,Math.PI*2); c.fillStyle=`rgba(255,255,255,${q===1?.3:.6})`; c.fill();
 }
 
@@ -425,28 +437,26 @@ let lastOutline = null;
 // size ladder: Chipped is small, Flawed is drawn slim (squeezed sideways) so it never reads as Normal
 const GEM_SIZE = [0, .5, .68, .76, .85, .92];
 function drawGem(c, cx, cy, S, type, q, time=0){
-  if (q===2){ c.save(); c.translate(cx,cy); c.scale(.68,1); c.translate(-cx,-cy); drawGemInner(c,cx,cy,S,type,q,time); c.restore(); return; }
-  if (q===3 && 'AQDR'.includes(type)){ c.save(); c.translate(cx,cy); c.scale(.84,1.08); c.translate(-cx,-cy); drawGemInner(c,cx,cy,S,type,q,time,true); c.restore(); return; }
   drawGemInner(c,cx,cy,S,type,q,time);
 }
 function drawGemInner(c, cx, cy, S, type, q, time=0, oval=false){
   const rnd = rand(type.charCodeAt(0)*131 + q*7);
   const s = q===6 ? S*.8 : S*GEM_SIZE[q];
   if (q===6) greatBack(c,cx,cy,S,type,time);
+  let QP = QSHAPE[q](); if (q===1){ QP = jitterOutline(QP,.14,rand(type.charCodeAt(0)*131+7)); QP = notch(QP, 1, .42, .7); QP = notch(QP, Math.floor(QP.length*.62), .2, .5); }
   c.save();
   if (q===5){ c.shadowColor=GLOW[type]; c.shadowBlur=s*.5; }
   if (type==='O'){
-    opal(c,cx,cy,s,q,rnd,q===6?time:0);
+    opal(c,cx,cy,s,q,rnd,q===6?time:0,QP);
     c.restore();
-    if (q===1){ c.save(); c.beginPath(); c.ellipse(cx,cy,s*.82,s*.98,0,0,Math.PI*2); c.clip(); crack(c,cx,cy,s,.5,-.5,2.4,.9,rnd,.05); speck(c,cx-s*.2,cy+s*.35,s*.07); c.restore(); }
-    if (q===2){ c.save(); c.beginPath(); c.ellipse(cx,cy,s*.82,s*.98,0,0,Math.PI*2); c.clip(); crack(c,cx,cy,s,.6,.3,3.3,.6,rnd,.035); c.restore(); }
-    if (q===4) { c.save(); c.beginPath(); c.ellipse(cx,cy,s*.85,s*1.01,0,0,Math.PI*2); const g=c.createLinearGradient(cx-s,cy-s,cx+s,cy+s); g.addColorStop(0,'#ffffff'); g.addColorStop(.4,'#a9b2c3'); g.addColorStop(1,'#59606e'); c.strokeStyle=g; c.lineWidth=Math.max(1.1,s*.06); c.stroke(); c.restore(); }
-    if (q>=5) { c.save(); c.beginPath(); c.ellipse(cx,cy,s*.86,s*1.02,0,0,Math.PI*2); const g=c.createLinearGradient(cx-s,cy-s,cx+s,cy+s); g.addColorStop(0,'#fff3b8'); g.addColorStop(.4,'#d9a21e'); g.addColorStop(1,'#8a5a08'); c.strokeStyle=g; c.lineWidth=Math.max(1.2,s*.08); c.stroke(); c.restore(); }
+    if (q===1){ c.save(); poly(c,QP,cx,cy,s); c.clip(); crack(c,cx,cy,s,.5,-.5,2.4,.9,rnd,.05); speck(c,cx-s*.2,cy+s*.35,s*.07); c.restore(); }
+    if (q===2){ c.save(); poly(c,QP,cx,cy,s); c.clip(); crack(c,cx,cy,s,.6,.3,3.3,.6,rnd,.035); c.restore(); }
+    if (q===4) { c.save(); poly(c,QP,cx,cy,s*1.03); const g=c.createLinearGradient(cx-s,cy-s,cx+s,cy+s); g.addColorStop(0,'#ffffff'); g.addColorStop(.4,'#a9b2c3'); g.addColorStop(1,'#59606e'); c.strokeStyle=g; c.lineWidth=Math.max(1.1,s*.06); c.stroke(); c.restore(); }
+    if (q>=5) { c.save(); poly(c,QP,cx,cy,s*1.03); const g=c.createLinearGradient(cx-s,cy-s,cx+s,cy+s); g.addColorStop(0,'#fff3b8'); g.addColorStop(.4,'#d9a21e'); g.addColorStop(1,'#8a5a08'); c.strokeStyle=g; c.lineWidth=Math.max(1.2,s*.08); c.stroke(); c.restore(); }
   } else {
     const p = palFor(type,q), cut = CUT[type];
-    let P = cut.outline(q); if (oval) P = ovalize(P); lastOutline = P;
-    if (q===1){ P = jitterOutline(P,.14,rnd); P = notch(P, 1, .42, .7); P = notch(P, Math.floor(P.length*.62), .2, .5); }
-    if (q===2){ P = notch(P, Math.floor(P.length*.3), .16, .45); }
+    let P = QP; lastOutline = P;
+    if (q===2){ P = notch(P, Math.floor(P.length*.3), .1, .3); }
     poly(c,P,cx,cy,s); c.fillStyle=tone(p,.35); c.fill(); c.shadowBlur=0;
     c.save(); poly(c,P,cx,cy,s); c.clip();
     if (cut.kind==='brilliant') brilliant(c,P,cx,cy,s,p,q,type,rnd); else stepCut(c,P,cx,cy,s,p,q,rnd);
@@ -466,7 +476,7 @@ function drawGemInner(c, cx, cy, S, type, q, time=0, oval=false){
     if (q===4) silverRim(c,P,cx,cy,s,.06);
     c.restore();
   }
-  if (q===6) greatHalo(c,cx,cy,s,type,time, type==='O' ? ring(28,.82,.98) : lastOutline);
+  if (q===6) greatHalo(c,cx,cy,s,type,time, type==='O' ? QP : lastOutline);
   // a single small glint on clean stones (no stacked sparkles)
   if (q>=3 && q<=5){ c.fillStyle='rgba(255,255,255,.95)'; c.beginPath(); c.arc(cx-s*.3, cy-s*.38, Math.max(1, s*.07), 0, Math.PI*2); c.fill(); }
   if (q===6) greatFront(c,cx,cy,s,type,time);
