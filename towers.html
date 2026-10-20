@@ -1160,11 +1160,13 @@ const M = {
   white:stoneMat('#e6e3da',.2), bloodstone:stoneMat('#2c5a40',.35), sand:stoneMat('#c9a35a',.2),
 };
 // stepped base: tier 1 dark steel, tier 2 adds a gold ring, tier 3+ gold-trimmed and wider
-function base(tier, mat=M.dark){
-  const w = tier>=3 ? 1.06 : 1;
-  const parts = [lathe([[.38*w,0],[.38*w,.05],[.33*w,.06],[.33*w,.1],[.26*w,.11],[.24*w,.15],[.16,.17],[.12,.2],[.12,.3],[.15,.32]],16,mat)];
-  parts.push(place(torus(.3*w,.018,20,6, tier>=2 ? M.gold : M.steel),{ty:.105}));
-  if (tier>=3) parts.push(place(torus(.36*w,.016,22,6,M.gold),{ty:.05}));
+function base(tier, mat=M.dark, sides=16){
+  // sides: 16 for the usual round pedestal, 6 for a hexagonal one, 4 for a square one
+  const w = (tier>=3 ? 1.06 : 1) * (sides<=6 ? 1/Math.cos(Math.PI/sides) * .92 : 1), ry = sides===4 ? Math.PI/4 : sides===6 ? Math.PI/6 : 0;
+  const ringOrPoly = (R, y, mat2) => sides>=16 ? place(torus(R,.018,20,6,mat2),{ty:y}) : place(torus(R+.006,.016,sides,4,mat2),{ty:y,ry});   // a polygonal ring matching the pedestal
+  const parts = [place(lathe([[.38*w,0],[.38*w,.05],[.33*w,.06],[.33*w,.1],[.26*w,.11],[.24*w,.15],[.16,.17],[.12,.2],[.12,.3],[.15,.32]],sides,mat),{ry})];
+  parts.push(ringOrPoly(.3*w,.105, tier>=2 ? M.gold : M.steel));
+  if (tier>=3) parts.push(ringOrPoly(.36*w,.05,M.gold));
   for (const p of parts) p.isBase = true;   // design() swaps these for a natural outcrop on most towers
   return parts;
 }
@@ -1209,7 +1211,27 @@ FAM.jade = (t,d) => {
   m.push(orb(r,oy,col));
   return {m, fx:[['orb',oy,r,col]], cam:{pitch:-.4,yaw:.4}};
 };
+// ---- Rose Quartz Crystal: the crystal rose in bloom, in soft rose-quartz pinks; a rose-quartz brilliant at its heart ----
+const RQ  = {kind:'gem', col:[1,.62,.8], deep:[.3,.08,.18], glow:[1,.85,.94], alpha:.78, edge:.13};
+const RQ2 = {kind:'gem', col:[1,.42,.66], deep:[.28,.04,.14], glow:[1,.7,.88], alpha:.82, edge:.12};
+const RQW = {kind:'gem', col:[.97,.97,1], deep:[.08,.09,.14], glow:[1,1,1], alpha:.7, edge:.12};
+const RQG = {kind:'metal', tint:[1.12,.8,.82]};
+function roseQuartzBloom(){
+  const m=[];
+  for (let i=0;i<12;i++){ const a=i*2*Math.PI/12;
+    m.push(petal(.22, .055, .012, i%2?RQ2:RQ, a, .12, .01, .06));
+    if (i%2===0) m.push(place(brilliantMesh(.022,RQW,8),{tx:Math.cos(a)*.29,tz:Math.sin(a)*.29,ty:.03})); }
+  m.push(lathe([[.05,0],[.03,.06],[.022,.32],[.034,.36]],10,RQG));
+  for (const [a,yy] of [[.4,.14],[2.6,.2],[4.6,.26]]) m.push(petal(.12,.04,.008,RQ2,a,.5,yy,.02));
+  const y=.48, nb=9;
+  for (let i=0;i<nb;i++){ const a=i*2*Math.PI/nb; m.push(petal(.18, .065, .012, RQ, a, .55, y-.1, .04)); }
+  for (let i=0;i<nb;i++){ const a=(i+.5)*2*Math.PI/nb; m.push(petal(.12, .055, .012, RQ2, a, .9, y-.09, .03)); }
+  m.push(place(torus(.05,.012,16,5,RQG),{ty:y-.09}));
+  const r=.14; m.push(place(brilliantMesh(r,{kind:'gem', col:[1,.42,.7], deep:[.32,.06,.18], glow:[1,.75,.9], alpha:.84, edge:.14},20),{ty:y+.07,rx:.38}));
+  return {m, fx:[['glow',y+.07,r*1.2,'#ffb0d0']], cam:{pitch:-.4,yaw:.4}};
+}
 FAM.redcrystal = (t,d) => {
+  if (t===3) return roseQuartzBloom();   // the final tier blooms
   const col=t===3?'#ff9ab8':'#ff6b8b', m=[...base(t)];
   const s = t===1 ? [[-.1,.0,.05,.42,.25],[.1,.02,.05,.38,-.25]] : t===2 ? [[-.13,0,.05,.42,.3],[.13,.02,.05,.44,-.3],[0,-.1,.045,.5,0,.2]] : [[-.15,0,.05,.44,.35],[.15,.02,.05,.46,-.35],[-.06,-.12,.045,.56,.1,.25],[.07,-.1,.045,.6,-.1,.25]];
   for (const sh of s) m.push(...shards([[sh[0],sh[1],sh[2],sh[3],sh[4],sh[5]||0]].map(([a,b,c,dd,e,f])=>[a,b,c,dd,e,f]), gemMat(col,.7)).map(x=>place(x,{ty:.3})));
@@ -1241,8 +1263,13 @@ FAM.uranium = (t,d) => {
   return {m, fx:[['orb',y,r,col],['pool',.78,col]], cam:{pitch:-.45,yaw:.4}};
 };
 FAM.pinkdiamond = (t,d) => {
-  const col='#ff9ad5', m=[...base(t, M.steel)];
+  const col='#ff9ad5', m=[...base(t, M.steel, 6)];
   m.push(lathe([[.05,.3],[.03,.55]],10,M.steel));
+  // pink crystals rising from the corners of the hexagonal pedestal, more on the Great version
+  const n = t===1 ? 6 : 6, PINK = gemMat(col,.74), PINK2 = gemMat('#ff6fb8',.78);
+  for (let i=0;i<n;i++){ const a=i*Math.PI/3+Math.PI/6, r=.3, h=(t===1?.13:.19)+(i%2)*.05;
+    m.push(place(crystalMesh(6,.026,h,.05,i%2?PINK2:PINK,.82),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:.05,rz:-Math.cos(a)*.25,rx:Math.sin(a)*.25}));
+    if (t===2) m.push(place(crystalMesh(6,.017,h*.6,.035,PINK,.82),{tx:Math.cos(a+.35)*.25,tz:Math.sin(a+.35)*.25,ty:.1,rz:-Math.cos(a+.35)*.45,rx:Math.sin(a+.35)*.45})); }
   for (let i=0;i<4;i++){ const a=i*Math.PI/2+.4; m.push(place(bladeMesh(.12,.015,.008,M.steel),{tx:Math.cos(a)*.06,tz:Math.sin(a)*.06,ty:.52,rz:-Math.cos(a)*.6,rx:Math.sin(a)*.6})); }
   const y=.72, r=t===1?.2:.23;
   m.push(place(brilliantMesh(r,gemMat(col,.72)),{ty:y,rx:.15}));
