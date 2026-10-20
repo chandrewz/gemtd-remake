@@ -1998,31 +1998,33 @@ function pyramid(col, s, grand){
   return {m, fx:[['orb',y,r,col]], cam:{pitch:-.38,yaw:.35}};
 }
 
-// ---- Star Ruby family: a ruby star held above a star-shaped dais; more points and more fire each tier ----
-function starPrism(n, rOut, rIn, h, mat, y0=0, rot=0){ const v=[], f=[], N=2*n;
-  for (const [y,k] of [[y0,1],[y0+h,.9]]) for (let i=0;i<N;i++){ const a=rot+i*Math.PI/n, r=(i%2?rIn:rOut)*k; v.push([Math.cos(a)*r, y, Math.sin(a)*r]); }
-  v.push([0,y0+h+h*.25,0]); const T=v.length-1;
-  for (let i=0;i<N;i++){ const j=(i+1)%N; f.push([i,j,N+j,N+i]); f.push([N+i,N+j,T]); }
-  f.push([...Array(N).keys()].reverse());
-  return {v,f,mat}; }
-const RUBY = {kind:'gem', col:[1,.12,.22], deep:[.3,0,.04], glow:[1,.45,.5], alpha:.86, edge:.08};
-const EMBER = {kind:'gem', col:[1,.55,.12], deep:[.35,.06,0], glow:[1,.8,.4], alpha:.85, edge:.08};
+// ---- Star Ruby family: a low volcano that scorches the ground; the ruby sits glowing in its crater ----
+const BASALT = stoneMat('#2b2220', .25), BASALT2 = stoneMat('#3b2c27', .2), SCORCH = stoneMat('#160f0d', .1);
+const LAVA2 = {kind:'gem', col:[1,.38,.06], deep:[.4,.04,0], glow:[1,.75,.3], alpha:.95, edge:.05};
+const RUBY = {kind:'gem', col:[1,.1,.2], deep:[.3,0,.04], glow:[1,.45,.5], alpha:.92, edge:.08};
 FAM.starruby = (t,d) => {
-  const n=[0,5,6,8][t], m=[], y=[0,.5,.54,.58][t], R=[0,.16,.18,.21][t];
-  // star dais: dark crimson stone over a gold star, points matching the gem
-  m.push(starPrism(n, .31, .17, .03, M.gold, 0, -Math.PI/2));
-  m.push(starPrism(n, .27, .145, .06, M.lacquer, .03, -Math.PI/2));
-  if (t===3) for (let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; m.push(place(gemBall(.02,EMBER,6,4),{tx:Math.cos(a)*.2,tz:Math.sin(a)*.2,ty:.1})); }
-  // slender gold stem with a star-claw cradle
-  m.push(lathe([[.075,.08],[.05,.14],[.035,y-.18],[.05,y-.12]],8,M.gold));
-  for (let i=0;i<3;i++){ const a=i*2*Math.PI/3; m.push(place(bladeMesh(.1,.012,.006,M.gold),{tx:Math.cos(a)*.03,tz:Math.sin(a)*.03,ty:y-.14,rz:-Math.cos(a)*.5,rx:Math.sin(a)*.5})); }
-  // the star itself: ruby points around a faceted heart, facing the viewer
-  m.push(...starGem(n, R, .03+t*.004, y, RUBY, RUBY, -Math.PI/2));
-  if (t>=2) m.push(...starGem(n, R*.62, .022, y, t===3?EMBER:{...RUBY, col:[.6,.02,.1]}, RUBY, -Math.PI/2+Math.PI/n));
-  if (t>=2) m.push(place(torus(R*1.12,.008,32,4,M.gold),{ty:y,rx:Math.PI/2,ry:-.4}));
-  const fx = [['glow',y,R*.7,t===3?'#ff7a2b':'#ff3b5c']];
-  if (t===3) fx.unshift(['inferno', y-.12, .3, .2]);
-  return {m, fx, cam:{pitch:-.4,yaw:.4}};
+  const m=[], H=[0,.2,.25,.3][t], R0=[0,.3,.33,.36][t], Rc=[0,.08,.09,.1][t];
+  // scorched earth, with glowing cracks running outward
+  m.push(lathe([[.44,0],[.44,.008]],24,SCORCH));
+  const cracks = [0,5,7,9][t];
+  for (let i=0;i<cracks;i++){ const a=i*2*Math.PI/cracks+.3; m.push(petal(.1+(i%3)*.03,.012,.003,LAVA2,a,0,.01,R0*.95)); }
+  // the cone: rough basalt, slightly lumpy, open crater
+  m.push(place(lathe([[R0,.005],[R0*.8,H*.35],[R0*.5,H*.75],[Rc*1.35,H],[Rc,H*.92]],9,BASALT),{ry:.3}));
+  m.push(place(lathe([[R0*.82,.005],[R0*.6,H*.4],[R0*.34,H*.7]],7,BASALT2),{tx:.03,tz:-.02,ry:1.1}));
+  // lava pool in the crater, the ruby half-sunk in it
+  m.push(place(lathe([[Rc*1.02,H*.86],[Rc*1.02,H*.9]],12,LAVA2),{}));
+  m.push(place(gemBall(Rc*.8,RUBY,12,7),{ty:H*.95}));
+  // lava streams running down the slope
+  const streams=[0,2,3,4][t];
+  for (let i=0;i<streams;i++){ const b=i*2*Math.PI/streams+.8, dx=R0*.75-Rc, dy=-H*.82, L=Math.hypot(dx,dy);
+    m.push(place(place(bladeMesh(L*.9,.02+t*.004,.006,LAVA2),{rz:Math.atan2(-dx,dy), tx:Rc*1.1, ty:H*.9}),{ry:-b})); }
+  // higher tiers: ruby crystals breaking through the flanks
+  if (t>=2) for (let i=0;i<(t===3?5:3);i++){ const a=i*2*Math.PI/(t===3?5:3)+.2, r=R0*.55;
+    m.push(place(crystalMesh(5,.022,.05,.05,RUBY,.8),{tx:Math.cos(a)*r,tz:Math.sin(a)*r,ty:H*.35,rz:-Math.cos(a)*.6,rx:Math.sin(a)*.6})); }
+  const fx = [['glow',H*.95,Rc*1.4,'#ff5a1a'], ['core',H*.95,Rc*.9,'#ff1028'], ['pool',.0,'#ff3b1a']];
+  if (t===3) fx.unshift(['inferno', H*.9, .22, .12]);   // Fire Star erupts
+  else if (t===2) fx.push(['embers', H, .1]);
+  return {m, fx, cam:{pitch:-.5,yaw:.4}};
 };
 
 // ---- ultimates ----
@@ -2049,7 +2051,7 @@ FAM.crownprince = () => { const m=[...base(4, M.crimson)];
   for (let i=0;i<8;i++){ const a=i*Math.PI/4+.2; m.push(place(boxMesh(.06,.07,.06,M.crimson),{tx:Math.cos(a)*.22,tz:Math.sin(a)*.22,ty:.71})); }
   for (let i=0;i<6;i++){ const a=i*Math.PI/3; m.push(place(lathe([[.025,0],[0,.12]],4,M.gold),{tx:Math.cos(a)*.13,tz:Math.sin(a)*.13,ty:.75})); }
   m.push(ring(.13,.76,M.gold)); const y=.92, r=.15; m.push(place(gemBall(r,gemMat('#a8001a',.97),14,8),{ty:y}));   // near-opaque so the fire behind doesn't wash it out
-  return {m, fx:[['inferno',.74,.5,.32],['core',y,.13,'#ff1028'],['lightning',y,r]], cam:{pitch:-.45,yaw:.4}}; };
+  return {m, fx:[['inferno',.74,.5,.32],['core',y,.13,'#ff1028']], cam:{pitch:-.45,yaw:.4}}; };
 FAM.plutonium = () => { const m=[...base(4, M.concrete)];
   m.push(lathe([[.3,.3],[.28,.42],[.2,.55],[.08,.6]],16,M.concrete));
   for (const k of [-1,1]) m.push(place(lathe([[.03,.0],[.025,.62],[.04,.66]],6,M.dark),{tx:k*.38,ty:.05}));
@@ -2182,6 +2184,9 @@ function applyFX(c, fx, x, yb, k, u){
         for (const [w,col] of [[k*.022,'rgba(90,140,255,.35)'],[k*.009,'rgba(170,210,255,.9)'],[Math.max(.6,k*.004),'rgba(255,255,255,1)']]){
           c.strokeStyle=col; c.lineWidth=w; c.beginPath(); pts.forEach(([a1,b1],q)=>q?c.lineTo(a1,b1):c.moveTo(a1,b1)); c.stroke(); }
         if (i%2===0){ const [ex,ey]=pts[2]; c.strokeStyle='rgba(190,220,255,.8)'; c.lineWidth=Math.max(.5,k*.005); c.beginPath(); c.moveTo(ex,ey); c.lineTo(ex+(rnd()-.5)*k*.08, ey-(rnd())*k*.07); c.stroke(); } }
+      c.restore(); }
+    if (kind==='embers'){ const [,y,r]=f, yy=yb-k*y; const rnd=mulberryR(61); c.save(); c.globalCompositeOperation='lighter';
+      for (let i=0;i<9;i++){ c.fillStyle=`rgba(255,${120+((rnd()*110)|0)},40,.9)`; c.beginPath(); c.arc(x+(rnd()-.5)*k*r*2.4, yy-k*r*(.3+rnd()*2.2), Math.max(.6,k*.007*(1+rnd())), 0, Math.PI*2); c.fill(); }
       c.restore(); }
     if (kind==='crownGlow'){ const [,y]=f, yy=yb-k*y; glow(c,x,yy,k*.3,[1,.85,.45],.45); star(c,x,yy-k*.14,k*.09,.9); }
     if (kind==='prismRays'){ const [,y]=f, yy=yb-k*y; c.save(); c.globalCompositeOperation='lighter'; for (let i=0;i<12;i++){ const a=i*Math.PI/6, len=k*(i%2?.5:.7); const g=c.createLinearGradient(x,yy,x+Math.cos(a)*len,yy+Math.sin(a)*len); g.addColorStop(0,`hsla(${i*30},100%,65%,.45)`); g.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=g; c.beginPath(); c.moveTo(x,yy); c.lineTo(x+Math.cos(a-.06)*len,yy+Math.sin(a-.06)*len); c.lineTo(x+Math.cos(a+.06)*len,yy+Math.sin(a+.06)*len); c.closePath(); c.fill(); } c.restore(); }
