@@ -70,6 +70,7 @@ canvas#board{display:block;touch-action:manipulation;cursor:crosshair}
 .submit .hint{margin:0;font-size:12px;color:var(--muted);text-align:center}
 .chip.have{border-color:#2f6b49;background:#15281f}
 .chip.miss{opacity:.6}
+.chip.pending{border-style:dashed;border-color:#4d8a66;background:transparent}
 .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px}
 .kv div{display:flex;flex-direction:column;min-width:0}
 .kv span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -2627,9 +2628,11 @@ function partChip(key, have){
   const d = DEFS[key];
   const col = d.kind==='gem' ? GT[d.type].color : d.color;
   const label = d.kind==='gem' ? `${d.name} <em class="sh">${SH[d.type]}${d.q}</em>` : d.name;
-  return `<span class="chip ${have===true?'have':have===false?'miss':''}"><i style="background:${col}"></i>${label}</span>`;
+  return `<span class="chip ${have===true?'have':have==='draft'?'pending':have===false?'miss':''}"><i style="background:${col}"></i>${label}</span>`;
 }
 function ownedCount(key){ return S ? S.towers.filter(t=>t.key===key).length : 0; }
+// true: a kept tower on the board · 'draft': only among this round's unchosen gems · false: not there
+function partState(key){ if (!S) return null; const ts = S.towers.filter(t=>t.key===key); return ts.some(t=>!t.draft) ? true : ts.length ? 'draft' : false; }
 function abilities(d){
   const a = [];
   if (!d.dmg) a.push('No attack');
@@ -2781,7 +2784,7 @@ function renderInspector(){
   const outLine = (d.spdAura||d.dmgAura) ? `<div class="aura-row">Boosting ${t.auraOut||0} other tower${t.auraOut===1?'':'s'}</div>` : '';
   const auraHtml = (auraRows.length||outLine) ? `<div class="auras"><h2><span>Auras</span></h2>${auraRows.join('') || (d.dmg?'<div class="aura-row off">No auras on this tower</div>':'')}${outLine}</div>` : (d.dmg ? `<div class="auras"><h2><span>Auras</span></h2><div class="aura-row off">No auras on this tower</div></div>` : '');
   const uses = RECIPES.filter(R=>R.group!=='secret' && R.parts.includes(t.key));   // secret recipes stay secret
-  const usesHtml = uses.length ? `<div class="uses"><h2><span>Used in</span></h2>${uses.map(R=>`<div><b>${DEFS[R.to].name}</b>${R.parts.map(p=>partChip(p, ownedCount(p)>(p===t.key?0:0) ? true : false)).join('')}</div>`).join('')}</div>` : '';
+  const usesHtml = uses.length ? `<div class="uses"><h2><span>Used in</span></h2>${uses.map(R=>`<div><b>${DEFS[R.to].name}</b>${R.parts.map(p=>partChip(p, partState(p))).join('')}</div>`).join('')}</div>` : '';
   el.innerHTML = `<h2><span>Inspector</span>${t.draft?'<span style="color:var(--gold)">New this round</span>':''}</h2>
     <div class="insp-head" id="ihead"><div style="min-width:0"><div class="insp-title">${d.name}</div><div class="insp-sub">${sub}</div></div></div>
     <div class="kv">
@@ -2857,8 +2860,8 @@ function renderBook(){
   const intro = {special:'Combine these gems into special towers. Either all parts come from this round’s five placed gems, or all parts are towers you already kept (combine those during a wave). Rounds never mix with kept towers.',
     ultimate:'Ultimates fuse a fully upgraded special with two Great gems, or appear as a one-shot (see the Secret tab). They deal chaos damage, which ignores armor type.',
     secret:'The other way to make each ultimate: place all five qualities (Chipped through Perfect) of one gem type in the same round. One-shot only, never from towers already on the board.'}[tab];
-  body.innerHTML = `<p class="hint">${intro} Green parts are on your board now.</p>` + rs.map(R=>{
-    const have = R.parts.map(p=>ownedCount(p)>0); const ready = have.every(Boolean);
+  body.innerHTML = `<p class="hint">${intro} Solid green parts are on your board; dotted ones are among this round’s gems, not kept yet.</p>` + rs.map(R=>{
+    const have = R.parts.map(p=>partState(p)); const ready = have.every(h=>h===true);
     const d = DEFS[R.to];
     return `<div class="rrow ${ready?'ready':''}"><div class="rname">${d.name}<small>${abilities(d).slice(0,2).join(' · ')}</small></div><div class="rparts">${R.parts.map((p,i)=>partChip(p, S?have[i]:null)).join('')}</div></div>`;
   }).join('');
