@@ -141,6 +141,9 @@ sp('bloodstone2',{name:'Ancient Bloodstone', tier:2, dtype:'R', color:'#e0294d',
 sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:99, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.2,dur:3}, upg:{to:'yellowsapphire2',cost:250}});
 sp('yellowsapphire2',{name:'Star Yellow Sapphire', tier:2, dtype:'S', color:'#fff08a', range:850, cd:.8, dmg:179, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.25,dur:3}});
 sp('bryvx',    {name:'The Great Stone', tier:3, dtype:'X', color:'#ffffff', range:850, cd:.8, dmg:1500, dice:1, crit:{c:.3,m:3}, splash:{r:1.5,pct:.5}});
+// ---- rare one-shots (from the Dota 2 version): three Perfect gems placed in the same round ----
+sp('agate',    {name:'Agate', tier:3, rare:true, dtype:'E', color:'#5fd3a8', range:1100, cd:1, dmg:429, dice:1, multi:5});
+sp('obsidian', {name:'Obsidian', tier:3, rare:true, dtype:'S', color:'#6a5fa8', range:600, cd:1, dmg:819, dice:1, splash:{r:1.5,pct:.5,frost:true}, frost:{pct:.3,dur:3}});
 // ---- ultimates (Dota 2 GemTD style: final special + Perfect gems) ----
 // ---- ultimates: a fully upgraded special + two Great gems, OR a one-shot of Chipped–Perfect of one type ----
 sp('kohinoor',   {name:'Koh-i-Noor Diamond', tier:4, dtype:'X', color:'#fff3cc', range:950, cd:.55, dmg:520, dice:180, crit:{c:.3,m:3}, splash:{r:1.3,pct:.5}});
@@ -180,6 +183,8 @@ const RECIPES = [
   {to:'opalnebula', parts:['blackopal2','O6','Q6'], group:'ultimate'},
   {to:'wingsstone', parts:['redcrystal3','T6','R6'], group:'ultimate'},
   {to:'starofadam', parts:['paraiba2','E6','A6'], group:'ultimate'},
+  {to:'agate',    parts:['E5','O5','Q5'], group:'rare'},   // one-shot only
+  {to:'obsidian', parts:['S5','T5','D5'], group:'rare'},   // one-shot only
   {to:'kohinoor', parts:['A1','A2','A3','A4','A5'], group:'secret'},   // one-shot
   {to:'starsapphire', parts:['S1','S2','S3','S4','S5'], group:'secret'},   // one-shot
   {to:'crownprince', parts:['R1','R2','R3','R4','R5'], group:'secret'},   // one-shot
@@ -1422,6 +1427,29 @@ FAM.starruby = (t,d) => {
   return {m, fx, cam:{pitch:-.5,yaw:.4}};
 };
 
+// ---- Agate (rare one-shot): a sliced agate geode standing on edge, its bands emerald, opal and aquamarine, druzy crystals at the heart ----
+const AG_BANDS = [gemMat('#10c450',.85), {kind:'gem', col:[.96,.9,.94], deep:[.3,.25,.3], glow:[1,1,1], alpha:.8, edge:.1}, gemMat('#1ec9c4',.85), gemMat('#0a7a3c',.88), {kind:'gem', col:[.98,.8,.88], deep:[.3,.18,.24], glow:[1,.9,.95], alpha:.8, edge:.1}, gemMat('#3fe0d8',.85)];
+FAM.agate = (t,d) => { const m=[...base(3, M.steel)];
+  const y=.66, face = x => place(x,{ry:-.4});
+  m.push(lathe([[.06,.3],[.04,.4],[.05,.44]],10,M.gold));
+  // bands wobble like a real slice: each ring a little off-round and off-centre
+  const sh=[[1.14,1,.0,.0],[1.08,1.06,.01,-.006],[1.18,.98,-.008,.008],[1.05,1.1,.012,.004],[1.16,1.02,-.006,-.01],[1.1,1.08,.004,.012]];
+  m.push(face(place(torus(.305,.03,36,6,stoneMat('#6b5a48',.3)),{ty:y,rx:Math.PI/2,sx:1.06,sy:1.12})));
+  for (let i=0;i<6;i++){ const R=.27-i*.036, [sx,sy,ox,oy]=sh[i]; m.push(face(place(torus(R,.026,32,6,AG_BANDS[i]),{tx:ox,ty:y+oy,rx:Math.PI/2,sx,sy}))); }
+  for (let i=0;i<18;i++){ const a=i*2.39, r=.01+(i%6)*.011; m.push(face(place(crystalMesh(4,.011,.01,.04,i%3?gemMat('#d8fff6',.75):gemMat('#7af0c0',.8),.6),{tx:Math.cos(a)*r,ty:y+Math.sin(a)*r*1.1,tz:.02,rx:Math.PI/2+Math.sin(i)*.4,rz:Math.cos(i*1.7)*.4}))); }
+  return {m, fx:[['glow',y,.18,'#7af0c0']], cam:{pitch:-.38,yaw:.4}};
+};
+// ---- Obsidian (rare one-shot): a spire of glossy black volcanic glass with sapphire, topaz and diamond shards caught inside ----
+const OBS = {kind:'gem', col:[.16,.13,.22], deep:[.01,.01,.03], glow:[.5,.42,.85], alpha:.96, edge:.16};
+FAM.obsidian = (t,d) => { const m=[...base(3, M.obsidian)];
+  // a cluster of black glass blades, tall in the middle and splayed outward
+  const sh=[[0,0,.05,.6,0,0],[-.11,.03,.04,.42,.32,.05],[.11,0,.04,.46,-.32,-.05],[-.03,-.1,.035,.36,.08,.38],[.05,.1,.035,.38,-.08,-.34],[.16,-.08,.028,.26,-.55,.3],[-.16,.09,.028,.24,.55,-.3],[.02,.13,.025,.22,.1,-.6]];
+  for (const [x,z,r,h,rz,rx] of sh) m.push(place(crystalMesh(4,r,h,r*3.2,OBS,.55),{tx:x,tz:z,ty:.3,rz,rx,ry:x*5+.4}));
+  // the three Perfects, frozen in the glass
+  for (const [col,x,y,z] of [['#2f6bff',-.075,.56,.1],['#ffc93a',.08,.5,.1],['#eef3ff',.005,.7,.08]]) m.push(place(brilliantMesh(.05,gemMat(col,.9),10),{tx:x,ty:y,tz:z,rx:.5}));
+  return {m, fx:[['glow',.6,.12,'#7a6cff']], cam:{pitch:-.38,yaw:.4}};
+};
+
 // ---- ultimates ----
 /* ---- Koh-i-Noor: a rose-gold spire with amethyst buttresses, crowned by a great pink-violet oval brilliant ---- */
 const ROSEGOLD = {kind:'metal', tint:[1.1,.8,1]};
@@ -1721,7 +1749,7 @@ const TIERNAME = ['','Special · tier 1','Special · tier 2','Special · tier 3'
 function card(key, how){
   const d=DEFS[key], el=document.createElement('div'); el.className='card';
   const top=document.createElement('div'); top.className='top'; top.appendChild(gemCanvas(key,120,false));
-  const t=document.createElement('div'); t.innerHTML=`<div class="name">${d.name}</div><div class="sub">${key==='bryvx'?'Legendary':TIERNAME[d.tier]} · ${DTYPE_NAME[d.dtype]} damage</div>`; top.appendChild(t); el.appendChild(top);
+  const t=document.createElement('div'); t.innerHTML=`<div class="name">${d.name}</div><div class="sub">${key==='bryvx'?'Legendary':d.rare?'Rare one-shot':TIERNAME[d.tier]} · ${DTYPE_NAME[d.dtype]} damage</div>`; top.appendChild(t); el.appendChild(top);
   const st=document.createElement('div'); st.className='stats';
   st.innerHTML = `<div><span>Damage</span><b>${d.dmg?fmtHit(d):'—'}</b></div><div><span>Cooldown</span><b>${d.dmg?d.cd+'s':'—'}</b></div><div><span>Range</span><b>${d.dmg?tiles(d.range):tiles((d.burn||d.radslow||{r:d.range}).r)}</b></div><div><span>Targets</span><b>${d.air&&d.ground?'Both':d.air?'Air':'Ground'}</b></div>`;
   el.appendChild(st);
@@ -1751,6 +1779,8 @@ for (const R of RECIPES.filter(r=>r.group==='special')){
   while (n<3){ const e=document.createElement('div'); e.className='card empty'; row.appendChild(e); n++; }
   out.appendChild(row);
 }
+section('Rare one-shots', 'From the Dota 2 version: three Perfect gems placed in the same round. They can’t be made from towers already on the board.');
+{ const g=document.createElement('div'); g.className='grid4'; g.style.marginTop='10px'; RECIPES.filter(r=>r.group==='rare').forEach(R=>g.appendChild(card(R.to,{recipe:R}))); out.appendChild(g); }
 section('The Great Stone', 'Created by combining two Great gems (or pushing a Perfect past Great). Every gem in one.');
 { const g=document.createElement('div'); g.className='grid4'; g.style.marginTop='10px'; g.appendChild(card('bryvx',{})); out.appendChild(g); }
 section('Ultimates', 'Two ways to make each: a fully upgraded special plus two Great gems, or a one-shot of Chipped through Perfect of one type placed in the same round.');
