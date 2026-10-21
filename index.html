@@ -2522,23 +2522,29 @@ function frame(){
     } else {
     let sc = 1;
     const age = S.time - t.born; if (age < .25) sc = .5 + age*2;
-    if (t.draft && S.phase==='select'){ sc *= 1 + .06*Math.sin(T*6 + t.id); }
     ctx.drawImage(spr, cx - big*sc/2, cy - big*sc/2, big*sc, big*sc);
     }
-    if (t.draft){
-      ctx.strokeStyle = S.phase==='select' ? 'rgba(242,195,91,.9)' : 'rgba(242,195,91,.45)';
-      ctx.lineWidth = Math.max(1, CS*.07); ctx.strokeRect(t.x*CS+1.5, t.y*CS+1.5, CS-3, CS-3);
+    const canCombine = t.oneShot || t.flag;
+    const fx0 = t.x*CS+1.5, fy0 = t.y*CS+1.5, fw = CS-3;
+    if (t.draft){   // this round's gems: a thin silver frame
+      ctx.strokeStyle = S.phase==='select' ? 'rgba(214,222,236,.9)' : 'rgba(214,222,236,.45)'; ctx.lineWidth = Math.max(1, CS*.045);
+      ctx.strokeRect(fx0, fy0, fw, fw);
     }
-    if (d.kind==='gem' && CS>=15){
-      ctx.fillStyle = 'rgba(232,234,243,.75)'; ctx.font = `600 ${Math.max(7,CS*.3)}px "Barlow Semi Condensed", sans-serif`;
-      ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText(d.q, (t.x+1)*CS-1.5, (t.y+1)*CS);
+    if (canCombine){   // can make a special: a bright glint travels around the frame, trailing a short fading tail
+      const per = u => { u = ((u % 1) + 1) % 1; const d = u*4, k = Math.floor(d), f = d - k;
+        return k===0 ? [fx0+fw*f, fy0] : k===1 ? [fx0+fw, fy0+fw*f] : k===2 ? [fx0+fw*(1-f), fy0+fw] : [fx0, fy0+fw*(1-f)]; };
+      const head = T*.45 + t.id*.17, tail = .22, n = 14;
+      ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.3, CS*.07);
+      for (let i=0;i<n;i++){ const u0 = head - tail*(i+1)/n, u1 = head - tail*i/n; const [ax,ay] = per(u0), [bx,by] = per(u1);
+        ctx.strokeStyle = `rgba(255,255,255,${(1 - i/n)*.95})`; ctx.beginPath(); ctx.moveTo(ax,ay);
+        // keep the tail on the frame when it wraps a corner
+        const c0 = Math.floor((((u0%1)+1)%1)*4), c1 = Math.floor((((u1%1)+1)%1)*4);
+        if (c0 !== c1){ const corner = per(Math.ceil((((u0%1)+1)%1)*4)/4 + Math.floor(u0)); ctx.lineTo(corner[0],corner[1]); }
+        ctx.lineTo(bx,by); ctx.stroke(); }
+      ctx.restore();
     }
     const rk = t.key!=='rock' ? rankOf(t) : 0;
     if (rk && CS>=12){ ctx.fillStyle = '#f2c35b'; for (let k=0;k<Math.min(rk,5);k++) ctx.fillRect(t.x*CS + CS*.62 + (k%5)*CS*.075, t.y*CS + CS*.08, Math.max(1,CS*.05), CS*(rk>5?.18:.12)); }
-    if (t.flag){ // combine available
-      ctx.fillStyle = '#5fd38d'; ctx.beginPath(); ctx.arc(t.x*CS+CS*.2, t.y*CS+CS*.2, Math.max(2, CS*.13)*(1+.15*Math.sin(T*5)), 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle='#0b0d15'; ctx.lineWidth=1; ctx.stroke();
-    }
   }
 
   // hover preview
@@ -2811,11 +2817,12 @@ function renderInspector(){
 function updateFlags(){
   if (!S) return;
   for (const t of S.towers){
-    t.flag = false;
+    t.flag = false; t.oneShot = false;
     if (t.key==='rock') continue;
-    if (t.draft && S.phase==='select'){ t.flag = (DEFS[t.key].kind==='gem' && dupCount(t)>=2) || recipesFor(t,true).length>0; }
+    if (t.draft) continue;   // this round's gems sparkle only for one-shot recipes (marked below), not for plain ×2/×4 merges
     else if (!t.draft) t.flag = recipesFor(t,false).length>0;
   }
+  if (S.phase==='select') for (const t of S.draft) for (const {used} of recipesFor(t,true)){ t.oneShot = true; for (const u of used) u.oneShot = true; }
 }
 function renderStats(){
   if (!S) return;
