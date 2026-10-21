@@ -28,3 +28,7 @@ When the castle falls, the end screen offers **Submit score**. It opens a prefil
 Bump `GAME_VERSION` in `index.html` whenever a change affects gameplay. Replays from an older version go to review instead of being accepted automatically.
 
 To check a submission locally, run `npm install`, `npx playwright install chromium`, then `node scripts/verify.mjs issue-body.txt`.
+
+## Dev mode
+
+Open the game with `?dev` (for example `https://chandrewz.github.io/gemtd-remastered/?dev`) to get a **Dev saves** panel for testing: three save slots in your browser, Shift+S / Shift+L for slot 1, and save codes you can copy and paste between browsers. A save is the run's replay, so loading puts the game back exactly where it was, creeps mid-wave included. Pasting a submitted `GTD1.` replay code loads that run at its last action. Games loaded from a dev save can't be submitted to the leaderboard.

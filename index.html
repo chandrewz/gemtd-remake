@@ -96,6 +96,13 @@ ul.abil{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:co
 .controls .grow{flex:1}
 kbd{font-family:var(--f-ui);font-size:11px;font-weight:600;padding:0 5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;background:var(--ink);color:var(--fg);line-height:1.5}
 button.primary kbd{background:#ffe3a3;color:#1b1404;border-color:#c79a34}
+.dev{border-color:#6a5fa8}
+.dev h3{margin:0 0 8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#b6a8ff}
+.dev .slot{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:13px}
+.dev .slot span{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dev .slot b{color:var(--fg);font-weight:600}
+.dev button{padding:4px 9px;font-size:13px}
+.dev textarea{width:100%;height:46px;margin-top:6px;background:#0b0d15;color:var(--fg);border:1px solid var(--rule);border-radius:6px;font:11px ui-monospace,monospace;resize:vertical}
 .keys{margin:0;font-size:12px;color:var(--muted);line-height:2}
 .log{list-style:none;margin:0;padding:0;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:2px;max-height:120px;overflow:auto}
 .log li b{color:var(--fg);font-weight:600}
@@ -200,6 +207,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <button id="bookBtn" class="grow">Recipe book</button><button id="lbBtn" hidden>Leaderboard</button><button id="galBtn" hidden>Towers</button>
       <button id="restartBtn">Restart</button>
     </div>
+    <section class="card dev" id="devCard" hidden></section>
     <p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Recipes · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> Speed · <kbd>Esc</kbd> Deselect</p>
     <ol class="log" id="log" aria-live="polite"></ol>
   </aside>
@@ -2925,7 +2933,7 @@ async function prepareSubmit(){
   $('lbLink').hidden = !repo;
   endReplay = null; note.textContent = 'Preparing replay…';
   try { endReplay = await encodeReplay(exportReplay(nameEl.value)); } catch(e){ note.textContent = 'This browser can’t build a replay.'; $('submitBtn').disabled = $('copyReplayBtn').disabled = true; return; }
-  const bad = S.tainted ? 'This game was restored mid-run, so it can’t be verified.' : '';
+  const bad = S.tainted==='dev' ? 'This game was loaded from a dev save, so it can’t be submitted.' : S.tainted ? 'This game was restored mid-run, so it can’t be verified.' : '';
   $('submitBtn').disabled = !!bad || !repo; $('copyReplayBtn').disabled = false;
   note.textContent = bad || (repo ? `Opens a GitHub issue on ${repo}. A bot replays your game and scores it before it reaches the leaderboard.` : 'Online submission works when the game is hosted on GitHub Pages. You can still copy your replay code.');
 }
@@ -2986,7 +2994,8 @@ cv.addEventListener('contextmenu', ev => {
   const t = S.occ[IDX(x,y)]; S.sel = t || null; ui.dirty = true;
 });
 document.addEventListener('keydown', ev => {
-  if (ev.target.tagName==='INPUT') return;
+  if (ev.target.tagName==='INPUT' || ev.target.tagName==='TEXTAREA') return;
+  if (DEV && ev.shiftKey && !ev.ctrlKey && !ev.metaKey && !ev.altKey && (ev.key==='S' || ev.key==='L')){ ev.preventDefault(); ev.key==='S' ? devSave(0) : devLoad(0); return; }
   if (ev.key==='Escape'){ if (!$('bookModal').hidden){ $('bookModal').hidden = true; return; } if (S){ S.sel=null; ui.dirty=true; } }
   if (ev.key===' ' && S && S.started){ ev.preventDefault(); togglePause(); }
   if (ev.key==='1') setSpeed(1); if (ev.key==='2') setSpeed(2); if (ev.key==='3' || ev.key==='4') setSpeed(4);
@@ -3055,6 +3064,58 @@ function loop(now){
   }
   requestAnimationFrame(loop);
 }
+/* ---------- dev mode (open the game with ?dev): save and load games for testing ----------
+   A save is the game's own replay: the seed plus every action up to now. Loading replays it headless to the saved
+   tick, so the board, creeps mid-wave and both RNG streams come back exactly. Loaded games can't be submitted. */
+const DEV = /(^|[?&#])dev\b/.test(location.search + location.hash);
+const DEV_KEY = 'gemtd.devSaves', DEV_SLOTS = 3;
+function devSaves(){ try { const a = JSON.parse(localStorage.getItem(DEV_KEY)); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+function devSaveObj(){ return {...exportReplay('dev'), diff:S.diff, tick:S.tick, phase:S.phase, wave:S.wave, gold:S.gold, lives:S.lives, at:Date.now()}; }
+function devSave(i){
+  if (!S || !S.started){ toast('Start a game first', true); return; }
+  const a = devSaves(); a[i] = devSaveObj();
+  try { localStorage.setItem(DEV_KEY, JSON.stringify(a)); toast(`Saved to slot ${i+1}`); } catch(e){ toast('Couldn’t save: browser storage is unavailable', true); }
+  renderDev();
+}
+function devLoad(i){ const sv = devSaves()[i]; if (!sv){ toast(`Slot ${i+1} is empty`, true); return; } resumeFrom(sv); }
+function resumeFrom(sv){
+  if (!sv || !Array.isArray(sv.a) || typeof sv.seed!=='number'){ toast('That save is damaged', true); return; }
+  const target = sv.tick ?? (sv.a.length ? sv.a[sv.a.length-1][0] : 0);
+  const quiet = {toast, log, burst, floater}; toast = log = burst = floater = ()=>{};
+  let illegal = 0;
+  try {
+    newGame(DIFF[sv.diff] ? sv.diff : 'normal', sv.seed);
+    const tickTo = t => { while (S.tick < t && S.phase==='wave') step(TICK); };
+    for (const a of sv.a){ tickTo(a[0]); if (!applyAction(a)) illegal++; if (S.phase==='lost') break; }
+    tickTo(target);
+  } finally { toast = quiet.toast; log = quiet.log; burst = quiet.burst; floater = quiet.floater; }
+  S.tainted = 'dev'; S.t0 = Date.now() - (sv.wall||0)*1000; S.fx = []; S.sel = null; S.auraDirty = true;
+  if (!S.paused) togglePause();   // land paused so you can look around first
+  $('startOverlay').hidden = true; $('endOverlay').hidden = true;
+  if (S.phase==='lost' || S.phase==='victory') showEnd(S.phase==='victory');
+  const old = sv.v && sv.v!==GAME_VERSION ? ` It was saved on ${sv.v}, so it may play out differently.` : '';
+  log(`<b>Dev:</b> loaded wave ${S.wave}, ${S.phase}.${illegal ? ` ${illegal} action(s) no longer apply.` : ''}${old}`);
+  toast(`Loaded wave ${S.wave}${illegal||old ? ' (see log)' : ''}`, !!(illegal||old));
+  ui.dirty = true; renderDev();
+}
+function renderDev(){
+  const el = $('devCard'); if (!DEV){ el.hidden = true; return; } el.hidden = false;
+  const a = devSaves(), ago = t => { const m = Math.round((Date.now()-t)/60000); return m<1 ? 'just now' : m<60 ? `${m} min ago` : m<1440 ? `${Math.round(m/60)} h ago` : `${Math.round(m/1440)} d ago`; };
+  el.innerHTML = `<h3>Dev saves</h3>` + Array.from({length:DEV_SLOTS}, (_,i) => { const v = a[i];
+    return `<div class="slot"><span>${i+1}. ${v ? `<b>Wave ${v.wave}</b> · ${v.phase} · ${v.lives} lives · ${v.gold} g · ${ago(v.at)}${v.v!==GAME_VERSION?' · old version':''}` : 'Empty'}</span>
+      <button data-dev="save" data-i="${i}">Save</button><button data-dev="load" data-i="${i}" ${v?'':'disabled'}>Load</button></div>`; }).join('') +
+    `<div class="slot"><button data-dev="copy">Copy save code</button><button data-dev="paste">Load code</button><span>Shift+S / Shift+L: slot 1</span></div>
+     <textarea id="devCode" placeholder="Paste a save or replay code (GTD1.…), then Load code" spellcheck="false"></textarea>`;
+  el.querySelectorAll('[data-dev]').forEach(b => b.onclick = async () => { const i = +b.dataset.i, op = b.dataset.dev;
+    if (op==='save') devSave(i); else if (op==='load') devLoad(i);
+    else if (op==='copy'){ if (!S || !S.started){ toast('Start a game first', true); return; }
+      const code = await encodeReplay(devSaveObj()); $('devCode').value = code;
+      try { await navigator.clipboard.writeText(code); toast('Save code copied'); } catch(e){ toast('Code is in the box below'); } }
+    else if (op==='paste'){ const code = $('devCode').value.trim(); if (!code){ toast('Paste a code first', true); return; }
+      try { resumeFrom(await decodeReplay(code)); } catch(e){ toast('That code couldn’t be read', true); } }
+  });
+}
+renderDev();
 function snapshot(){
   if (!S) return {};
   return {s:{diff:S.diff, wave:S.wave, gold:S.gold, lives:S.lives, chance:S.chance, phase:S.phase, placed:S.placed, totalKills:S.totalKills,
