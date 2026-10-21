@@ -2527,7 +2527,7 @@ function frame(){
     const canCombine = t.oneShot || t.flag;
     const fx0 = t.x*CS+1.5, fy0 = t.y*CS+1.5, fw = CS-3;
     if (t.draft){   // this round's gems: a thin silver frame
-      ctx.strokeStyle = S.phase==='select' ? 'rgba(214,222,236,.9)' : 'rgba(214,222,236,.45)'; ctx.lineWidth = Math.max(1, CS*.045);
+      ctx.strokeStyle = 'rgba(214,222,236,.45)'; ctx.lineWidth = Math.max(1, CS*.045);   // the same subtle grey while placing and choosing
       ctx.strokeRect(fx0, fy0, fw, fw);
     }
     if (canCombine){   // can make a special: a bright glint travels around the frame, trailing a short fading tail
