@@ -3064,20 +3064,21 @@ function loop(now){
   }
   requestAnimationFrame(loop);
 }
-/* ---------- dev mode (open the game with ?dev): save and load games for testing ----------
+/* ---------- dev tools, from the browser console only (gemDev.help()): save and load games for testing ----------
    A save is the game's own replay: the seed plus every action up to now. Loading replays it headless to the saved
    tick, so the board, creeps mid-wave and both RNG streams come back exactly. Loaded games can't be submitted. */
-const DEV = /(^|[?&#])dev\b/.test(location.search + location.hash);
 const DEV_KEY = 'gemtd.devSaves', DEV_SLOTS = 3;
+let DEV = false; try { DEV = localStorage.getItem('gemtd.devPanel')==='1'; } catch(e){}
 function devSaves(){ try { const a = JSON.parse(localStorage.getItem(DEV_KEY)); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
 function devSaveObj(){ return {...exportReplay('dev'), diff:S.diff, tick:S.tick, phase:S.phase, wave:S.wave, gold:S.gold, lives:S.lives, at:Date.now()}; }
 function devSave(i){
+  if (!(i>=0 && i<DEV_SLOTS)){ toast(`Slots are 1-${DEV_SLOTS}`, true); return; }
   if (!S || !S.started){ toast('Start a game first', true); return; }
   const a = devSaves(); a[i] = devSaveObj();
   try { localStorage.setItem(DEV_KEY, JSON.stringify(a)); toast(`Saved to slot ${i+1}`); } catch(e){ toast('Couldn’t save: browser storage is unavailable', true); }
   renderDev();
 }
-function devLoad(i){ const sv = devSaves()[i]; if (!sv){ toast(`Slot ${i+1} is empty`, true); return; } resumeFrom(sv); }
+function devLoad(i){ if (!(i>=0 && i<DEV_SLOTS)){ toast(`Slots are 1-${DEV_SLOTS}`, true); return; } const sv = devSaves()[i]; if (!sv){ toast(`Slot ${i+1} is empty`, true); return; } resumeFrom(sv); }
 function resumeFrom(sv){
   if (!sv || !Array.isArray(sv.a) || typeof sv.seed!=='number'){ toast('That save is damaged', true); return; }
   const target = sv.tick ?? (sv.a.length ? sv.a[sv.a.length-1][0] : 0);
@@ -3116,6 +3117,17 @@ function renderDev(){
   });
 }
 renderDev();
+window.gemDev = {
+  help(){ console.log(['gemDev.save(n)      save the current game to slot n (1-3)', 'gemDev.load(n)      load slot n (lands paused)',
+    'gemDev.list()       show the slots', 'await gemDev.code()     save code for the current game', 'await gemDev.loadCode(c) load a save or replay code (GTD1.…)',
+    'gemDev.panel(on)    show or hide the save panel and Shift+S / Shift+L (remembered in this browser)', 'gemDev.clear()      delete all saves'].join('\n')); },
+  save(n=1){ devSave(n-1); }, load(n=1){ devLoad(n-1); },
+  list(){ console.table(devSaves().map((v,i)=>v && {slot:i+1, wave:v.wave, phase:v.phase, lives:v.lives, gold:v.gold, version:v.v, saved:new Date(v.at).toLocaleString()}).filter(Boolean)); },
+  async code(){ if (!S || !S.started) return 'Start a game first'; return encodeReplay(devSaveObj()); },
+  async loadCode(c){ resumeFrom(await decodeReplay(c)); },
+  panel(on=true){ DEV = !!on; try { on ? localStorage.setItem('gemtd.devPanel','1') : localStorage.removeItem('gemtd.devPanel'); } catch(e){} renderDev(); },
+  clear(){ try { localStorage.removeItem(DEV_KEY); } catch(e){} renderDev(); },
+};
 function snapshot(){
   if (!S) return {};
   return {s:{diff:S.diff, wave:S.wave, gold:S.gold, lives:S.lives, chance:S.chance, phase:S.phase, placed:S.placed, totalKills:S.totalKills,
