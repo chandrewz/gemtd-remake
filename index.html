@@ -39,6 +39,10 @@ button.on{border-color:var(--gold);color:var(--gold)}
 .board-wrap{position:relative;min-width:0;display:flex;justify-content:center}
 .board-frame{position:relative;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--slate);box-shadow:0 20px 60px -30px #000}
 canvas#board{display:block;touch-action:manipulation;cursor:crosshair}
+.board3d{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;cursor:crosshair;touch-action:none}
+.labels3d{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.fl3d{position:absolute;left:0;top:0;font:700 15px var(--f-ui);text-shadow:0 1px 3px #000,0 0 2px #000;white-space:nowrap}
+body.v3d canvas#board{visibility:hidden}
 .panel{display:flex;flex-direction:column;gap:12px;min-width:0}
 .brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .brand h1{font-family:var(--f-display);font-weight:400;font-size:30px;letter-spacing:.06em;margin:0;line-height:1}
@@ -205,7 +209,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button>
       <button id="pathBtn" class="on">Path</button>
       <button id="bookBtn" class="grow">Recipe book</button><button id="lbBtn" hidden>Leaderboard</button><button id="galBtn" hidden>Towers</button>
-      <button id="restartBtn">Restart</button>
+      <button id="viewBtn" title="Switch between the 2D and 3D board">3D view</button><button id="restartBtn">Restart</button>
     </div>
     <section class="card dev" id="devCard" hidden></section>
     <p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Recipes · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> Speed · <kbd>Esc</kbd> Deselect</p>
@@ -231,6 +235,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
   </div>
 </div>
 
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script>
 'use strict';
 /* ============================================================
@@ -2392,7 +2397,7 @@ function towerSprite(key, d, cellPx, W, H, baseFromBottom){
   return out;
 }
 
-return {drawTower, towerSprite};
+return {drawTower, towerSprite, design};
 })();
 
 
@@ -2970,23 +2975,26 @@ function showEnd(won){
    ============================================================ */
 function cellAt(ev){ const r = cv.getBoundingClientRect(); return {x:Math.floor((ev.clientX-r.left)/CS), y:Math.floor((ev.clientY-r.top)/CS)}; }
 let hoverKey = '';
-cv.addEventListener('mousemove', ev => {
+function boardHover(x, y){
   if (!S || S.phase!=='build'){ hover = null; return; }
-  const {x,y} = cellAt(ev); const k = x+','+y+','+S.towers.length;
+  const k = x+','+y+','+S.towers.length;
   if (k===hoverKey) return; hoverKey = k;
   if (x<0||y<0||x>=GW||y>=GH){ hover=null; return; }
   if (S.occ[IDX(x,y)]){ hover = null; return; }
   const c = canPlace(x,y); hover = {x,y,ok:c.ok,why:c.why,route:c.route};
-});
-cv.addEventListener('mouseleave', ()=>{ hover=null; hoverKey=''; });
-cv.addEventListener('click', ev => {
+}
+function boardLeave(){ hover=null; hoverKey=''; }
+function boardClick(x, y){
   if (!S || S.phase==='lost' || S.phase==='victory') return;
-  const {x,y} = cellAt(ev); if (x<0||y<0||x>=GW||y>=GH) return;
+  if (x<0||y<0||x>=GW||y>=GH) return;
   const t = S.occ[IDX(x,y)];
   if (t){ S.sel = t; ui.dirty = true; return; }
   if (S.phase==='build'){ placeGem(x,y); hoverKey=''; hover=null; return; }
   S.sel = null; ui.dirty = true;
-});
+}
+cv.addEventListener('mousemove', ev => { const {x,y} = cellAt(ev); boardHover(x,y); });
+cv.addEventListener('mouseleave', boardLeave);
+cv.addEventListener('click', ev => { const {x,y} = cellAt(ev); boardClick(x,y); });
 // right-click selects anything too
 cv.addEventListener('contextmenu', ev => {
   ev.preventDefault(); if (!S) return;
@@ -3051,7 +3059,7 @@ function loop(now){
       try { step(TICK); } catch(err){ console.error(err); S.projs.length = 0; }   // never let one bad frame freeze the game
       if (S.phase==='lost'||S.phase==='victory') break; }
   }
-  frame();
+  if (!view3d.on) frame();
   uiT += dt;
   if (!S){ if (ui.dirty){ renderPregame(); ui.dirty = false; } }
   else {
@@ -3128,6 +3136,22 @@ window.gemDev = {
   panel(on=true){ DEV = !!on; try { on ? localStorage.setItem('gemtd.devPanel','1') : localStorage.removeItem('gemtd.devPanel'); } catch(e){} renderDev(); },
   clear(){ try { localStorage.removeItem(DEV_KEY); } catch(e){} renderDev(); },
 };
+/* ---------- 3D view: an optional renderer (view3d.js) that reads the same state; rules and replays are untouched ---------- */
+window.GemGame = { consts:{GW, GH, PORTAL, CASTLE, CPS, NOBUILD, IDX, DEFS, GT, ARMOR, QN},
+  state:()=>S, hover:()=>hover, ui, emptyRoute:()=>EMPTY_ROUTE, waveInfo, flyPts:()=>FLY_PTS, U, Tower3D,
+  input:{hover:boardHover, click:boardClick, leave:boardLeave} };
+const view3d = {on:false, mod:null, loading:false};
+async function setView(on){
+  if (on && !view3d.mod){ if (view3d.loading) return; view3d.loading = true; $('viewBtn').textContent = 'Loading…';
+    try { view3d.mod = await import('./view3d.js'); } catch(e){ console.error(e); view3d.loading = false; $('viewBtn').textContent = '3D view'; toast('Couldn’t load the 3D view', true); return; }
+    view3d.loading = false; }
+  view3d.on = !!on; document.body.classList.toggle('v3d', view3d.on);
+  if (view3d.on) view3d.mod.start($('frame'), cv); else if (view3d.mod) view3d.mod.stop();
+  $('viewBtn').textContent = view3d.on ? '2D view' : '3D view'; $('viewBtn').classList.toggle('on', view3d.on);
+  try { localStorage.setItem('gemtd.view', view3d.on ? '3d' : '2d'); } catch(e){}
+}
+$('viewBtn').onclick = () => setView(!view3d.on);
+try { if (localStorage.getItem('gemtd.view')==='3d') setView(true); } catch(e){}
 function snapshot(){
   if (!S) return {};
   return {s:{diff:S.diff, wave:S.wave, gold:S.gold, lives:S.lives, chance:S.chance, phase:S.phase, placed:S.placed, totalKills:S.totalKills,
