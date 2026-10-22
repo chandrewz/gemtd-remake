@@ -128,6 +128,15 @@ button.primary kbd{background:#ffe3a3;color:#1b1404;border-color:#c79a34}
 .sheet header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rule);gap:8px;flex-wrap:wrap}
 .sheet header h2{font-family:var(--f-display);font-weight:400;margin:0;font-size:22px}
 .tabs{display:flex;gap:4px;flex-wrap:wrap}
+.modal .sheet.small{width:min(560px,100%)}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #1f2740}
+.setrow:last-child{border-bottom:0}
+.setrow[hidden]{display:none}
+.setrow b{display:block;font-weight:600}
+.setrow small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.seg{display:flex;gap:4px;flex-shrink:0}
+.tip3d{position:fixed;pointer-events:none;z-index:40;background:rgba(14,17,28,.9);border:1px solid var(--rule);border-radius:7px;padding:5px 10px;font-size:14px;white-space:nowrap;transform:translate(-50%,-135%)}
+.tip3d small{display:block;color:var(--muted);font-size:12px}
 .sheet .body{overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:6px}
 .rrow{display:grid;grid-template-columns:200px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid #1f2740;align-items:start}
 .rrow .rname{font-weight:600;display:flex;flex-direction:column;gap:2px}
@@ -208,8 +217,8 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <button id="pauseBtn">Pause</button>
       <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button>
       <button id="pathBtn" class="on">Path</button>
-      <button id="bookBtn" class="grow">Recipe book</button><button id="lbBtn" hidden>Leaderboard</button><button id="galBtn" hidden>Towers</button>
-      <button id="viewBtn" title="Switch between the 2D and 3D board">3D view</button><button id="restartBtn">Restart</button>
+      <button id="bookBtn" class="grow">Recipe book</button>
+      <button id="setBtn">Settings</button><button id="restartBtn">Restart</button>
     </div>
     <section class="card dev" id="devCard" hidden></section>
     <p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Recipes · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> Speed · <kbd>Esc</kbd> Deselect</p>
@@ -217,6 +226,18 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
   </aside>
 </div>
 
+<div class="modal" id="setModal" hidden>
+  <div class="sheet small" role="dialog" aria-label="Settings">
+    <header><h2>Settings</h2><button id="setClose">Close</button></header>
+    <div class="body">
+      <div class="setrow"><div><b>Board</b><small>The 3D board loads the first time you pick it.</small></div><div class="seg"><button data-view="2d" id="v2d">2D</button><button data-view="3d" id="v3d">3D</button></div></div>
+      <div class="setrow" id="qRow"><div><b>3D quality</b><small>Low turns off shadows and glow, for slower computers and phones.</small></div><div class="seg"><button data-q="high" id="qHigh">High</button><button data-q="low" id="qLow">Low</button></div></div>
+      <div class="setrow" id="camRow"><div><b>3D camera</b><small>Drag to pan, right-drag to rotate, scroll to zoom, arrow keys to move.</small></div><button id="camReset">Reset camera</button></div>
+      <div class="setrow"><div><b>Show path during waves</b><small>The path always shows while you build. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
+      <div class="setrow" id="linkRow" hidden><div><b>More</b><small>Opens in a new tab.</small></div><div class="seg"><button id="lbBtn">Leaderboard</button><button id="galBtn">Tower gallery</button></div></div>
+    </div>
+  </div>
+</div>
 <div class="modal" id="bookModal" hidden>
   <div class="sheet" role="dialog" aria-label="Recipe book">
     <header>
@@ -3004,7 +3025,7 @@ cv.addEventListener('contextmenu', ev => {
 document.addEventListener('keydown', ev => {
   if (ev.target.tagName==='INPUT' || ev.target.tagName==='TEXTAREA') return;
   if (DEV && ev.shiftKey && !ev.ctrlKey && !ev.metaKey && !ev.altKey && (ev.key==='S' || ev.key==='L')){ ev.preventDefault(); ev.key==='S' ? devSave(0) : devLoad(0); return; }
-  if (ev.key==='Escape'){ if (!$('bookModal').hidden){ $('bookModal').hidden = true; return; } if (S){ S.sel=null; ui.dirty=true; } }
+  if (ev.key==='Escape'){ if (!$('setModal').hidden){ $('setModal').hidden = true; return; } if (!$('bookModal').hidden){ $('bookModal').hidden = true; return; } if (S){ S.sel=null; ui.dirty=true; } }
   if (ev.key===' ' && S && S.started){ ev.preventDefault(); togglePause(); }
   if (ev.key==='1') setSpeed(1); if (ev.key==='2') setSpeed(2); if (ev.key==='3' || ev.key==='4') setSpeed(4);
   if (!S || S.phase==='lost' || S.phase==='victory' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
@@ -3025,12 +3046,11 @@ function setSpeed(v){ if (!S) return; S.speed = v; [1,2,4].forEach(k=>$('sp'+k).
 function togglePause(){ if (!S) return; S.paused = !S.paused; $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause'; $('pauseBtn').classList.toggle('on', S.paused); }
 $('pauseBtn').onclick = togglePause;
 [1,2,4].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
-$('pathBtn').onclick = ()=>{ ui.showPath = !ui.showPath; $('pathBtn').classList.toggle('on', ui.showPath); };
+$('pathBtn').onclick = ()=>{ ui.showPath = !ui.showPath; $('pathBtn').classList.toggle('on', ui.showPath); renderSettings(); };
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
-$('lbBtn').hidden = !submitRepo();
+$('linkRow').hidden = !submitRepo();
 $('galBtn').onclick = ()=> window.open('towers.html','_blank','noopener');
-$('galBtn').hidden = !submitRepo();
 $('bookClose').onclick = ()=>{ $('bookModal').hidden = true; };
 $('bookModal').addEventListener('click', ev => { if (ev.target.id==='bookModal') $('bookModal').hidden = true; });
 document.querySelectorAll('.tabs [data-tab]').forEach(b => b.onclick = ()=>{ ui.tab = b.dataset.tab; renderBook(); });
@@ -3138,19 +3158,32 @@ window.gemDev = {
 };
 /* ---------- 3D view: an optional renderer (view3d.js) that reads the same state; rules and replays are untouched ---------- */
 window.GemGame = { consts:{GW, GH, PORTAL, CASTLE, CPS, NOBUILD, IDX, DEFS, GT, ARMOR, QN},
-  state:()=>S, hover:()=>hover, ui, emptyRoute:()=>EMPTY_ROUTE, waveInfo, flyPts:()=>FLY_PTS, U, Tower3D,
+  state:()=>S, hover:()=>hover, ui, describe:t => t.key==='rock' ? {name:'Rock', sub:'Press R to remove'} : {name:DEFS[t.key].name, sub: DEFS[t.key].kind==='gem' ? `${DTYPE_NAME[DEFS[t.key].dtype]} damage` : t.key==='bryvx' ? 'Legendary' : DEFS[t.key].rare ? 'Rare one-shot' : 'Special'}, emptyRoute:()=>EMPTY_ROUTE, waveInfo, flyPts:()=>FLY_PTS, U, Tower3D,
   input:{hover:boardHover, click:boardClick, leave:boardLeave} };
-const view3d = {on:false, mod:null, loading:false};
+const view3d = {on:false, mod:null, loading:false, q:'high'};
+try { if (localStorage.getItem('gemtd.q3d')==='low') view3d.q = 'low'; } catch(e){}
 async function setView(on){
-  if (on && !view3d.mod){ if (view3d.loading) return; view3d.loading = true; $('viewBtn').textContent = 'Loading…';
-    try { view3d.mod = await import('./view3d.js'); } catch(e){ console.error(e); view3d.loading = false; $('viewBtn').textContent = '3D view'; toast('Couldn’t load the 3D view', true); return; }
+  if (on && !view3d.mod){ if (view3d.loading) return; view3d.loading = true; renderSettings();
+    try { view3d.mod = await import('./view3d.js'); } catch(e){ console.error(e); view3d.loading = false; renderSettings(); toast('Couldn’t load the 3D view', true); return; }
     view3d.loading = false; }
   view3d.on = !!on; document.body.classList.toggle('v3d', view3d.on);
-  if (view3d.on) view3d.mod.start($('frame'), cv); else if (view3d.mod) view3d.mod.stop();
-  $('viewBtn').textContent = view3d.on ? '2D view' : '3D view'; $('viewBtn').classList.toggle('on', view3d.on);
+  if (view3d.on){ view3d.mod.start($('frame'), cv); view3d.mod.setQuality(view3d.q); } else if (view3d.mod) view3d.mod.stop();
   try { localStorage.setItem('gemtd.view', view3d.on ? '3d' : '2d'); } catch(e){}
+  renderSettings();
 }
-$('viewBtn').onclick = () => setView(!view3d.on);
+function renderSettings(){
+  $('v2d').classList.toggle('on', !view3d.on); $('v3d').classList.toggle('on', view3d.on); $('v3d').textContent = view3d.loading ? 'Loading…' : '3D';
+  $('qHigh').classList.toggle('on', view3d.q==='high'); $('qLow').classList.toggle('on', view3d.q==='low');
+  $('qRow').hidden = $('camRow').hidden = !view3d.on;
+  $('pOn').classList.toggle('on', ui.showPath); $('pOff').classList.toggle('on', !ui.showPath);
+}
+$('setBtn').onclick = () => { renderSettings(); $('setModal').hidden = false; };
+$('setClose').onclick = () => { $('setModal').hidden = true; };
+$('setModal').addEventListener('click', ev => { if (ev.target.id==='setModal') $('setModal').hidden = true; });
+$('v2d').onclick = () => setView(false); $('v3d').onclick = () => setView(true);
+$('qHigh').onclick = $('qLow').onclick = ev => { view3d.q = ev.target.dataset.q; try { localStorage.setItem('gemtd.q3d', view3d.q); } catch(e){} if (view3d.on) view3d.mod.setQuality(view3d.q); renderSettings(); };
+$('camReset').onclick = () => { if (view3d.mod) view3d.mod.resetView(); };
+$('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; $('pathBtn').classList.toggle('on', ui.showPath); renderSettings(); };
 try { if (localStorage.getItem('gemtd.view')==='3d') setView(true); } catch(e){}
 function snapshot(){
   if (!S) return {};
