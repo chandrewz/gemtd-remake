@@ -106,7 +106,8 @@ function coreMat(t, q){ const k = 'c'+t+q; if (matCache[k]) return matCache[k];
 const HABIT = {
   A:{n:6, tip:'point', slim:.9,  tipK:1.9}, Q:{n:6, tip:'point', slim:.55, tipK:1.2}, D:{n:4, tip:'octa', slim:1.1, tipK:1}, E:{n:6, tip:'flat', slim:.8, tipK:0},
   O:{n:0, tip:'node', slim:1, tipK:0}, R:{n:6, tip:'point', slim:1.15, tipK:.8}, S:{n:6, tip:'point', slim:.95, tipK:2.4}, T:{n:8, tip:'wedge', slim:.8, tipK:1.1} };
-const LEVEL = { h:[0,.34,.4,.46,.55,.67,.84], r:[0,.08,.078,.076,.078,.085,.098], sides:[0,0,1,2,3,4,6] };
+// Perfect and Great are a single big stone rather than a cluster
+const LEVEL = { h:[0,.34,.4,.46,.55,.62,.8], r:[0,.08,.078,.076,.078,.13,.165], sides:[0,0,1,2,3,0,0] };
 function habitGeo(t, r, h, seed, rough){
   if (t==='D'){ const g = new THREE.OctahedronGeometry(r*1.7, 0); g.scale(1, 1.3, 1); g.translate(0, h*.5, 0); return g; }
   if (t==='O'){ let g = new THREE.IcosahedronGeometry(r*1.6, 2); g.deleteAttribute('normal'); g.deleteAttribute('uv'); g = mergeVertices(g);

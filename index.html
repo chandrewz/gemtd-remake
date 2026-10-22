@@ -215,8 +215,6 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
     <section class="card" id="chanceCard"></section>
     <div class="controls">
       <button id="pauseBtn">Pause</button>
-      <button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button>
-      <button id="pathBtn" class="on">Path</button>
       <button id="bookBtn" class="grow">Recipe book</button>
       <button id="setBtn">Settings</button><button id="restartBtn">Restart</button>
     </div>
@@ -233,6 +231,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <div class="setrow"><div><b>Board</b><small>The 3D board loads the first time you pick it.</small></div><div class="seg"><button data-view="2d" id="v2d">2D</button><button data-view="3d" id="v3d">3D</button></div></div>
       <div class="setrow" id="qRow"><div><b>3D quality</b><small>Low turns off shadows and glow, for slower computers and phones.</small></div><div class="seg"><button data-q="high" id="qHigh">High</button><button data-q="low" id="qLow">Low</button></div></div>
       <div class="setrow" id="camRow"><div><b>3D camera</b><small>Drag to pan, right-drag to rotate, scroll to zoom, arrow keys to move.</small></div><button id="camReset">Reset camera</button></div>
+      <div class="setrow"><div><b>Game speed</b><small>Hotkeys 1, 2 and 4.</small></div><div class="seg"><button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button></div></div>
       <div class="setrow"><div><b>Show path during waves</b><small>The path always shows while you build. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
       <div class="setrow" id="linkRow" hidden><div><b>More</b><small>Opens in a new tab.</small></div><div class="seg"><button id="lbBtn">Leaderboard</button><button id="galBtn">Tower gallery</button></div></div>
     </div>
@@ -3036,7 +3035,7 @@ document.addEventListener('keydown', ev => {
     return;
   }
   if (k==='B'){ $('bookModal').hidden = !$('bookModal').hidden; if (!$('bookModal').hidden) renderBook(); return; }
-  if (k==='P'){ $('pathBtn').click(); return; }
+  if (k==='P'){ togglePath(); return; }
   if (k==='G'){ buyChance(); return; }
   if (k==='N'){ repickDraft(); return; }
   const a = (ui.acts||[]).find(x=>x.key===k && !x.disabled);
@@ -3046,7 +3045,7 @@ function setSpeed(v){ if (!S) return; S.speed = v; [1,2,4].forEach(k=>$('sp'+k).
 function togglePause(){ if (!S) return; S.paused = !S.paused; $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause'; $('pauseBtn').classList.toggle('on', S.paused); }
 $('pauseBtn').onclick = togglePause;
 [1,2,4].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
-$('pathBtn').onclick = ()=>{ ui.showPath = !ui.showPath; $('pathBtn').classList.toggle('on', ui.showPath); renderSettings(); };
+function togglePath(){ ui.showPath = !ui.showPath; renderSettings(); toast(ui.showPath ? 'Path shown during waves' : 'Path hidden during waves'); }
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
 $('linkRow').hidden = !submitRepo();
@@ -3183,7 +3182,7 @@ $('setModal').addEventListener('click', ev => { if (ev.target.id==='setModal') $
 $('v2d').onclick = () => setView(false); $('v3d').onclick = () => setView(true);
 $('qHigh').onclick = $('qLow').onclick = ev => { view3d.q = ev.target.dataset.q; try { localStorage.setItem('gemtd.q3d', view3d.q); } catch(e){} if (view3d.on) view3d.mod.setQuality(view3d.q); renderSettings(); };
 $('camReset').onclick = () => { if (view3d.mod) view3d.mod.resetView(); };
-$('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; $('pathBtn').classList.toggle('on', ui.showPath); renderSettings(); };
+$('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; renderSettings(); };
 try { if (localStorage.getItem('gemtd.view')==='3d') setView(true); } catch(e){}
 function snapshot(){
   if (!S) return {};
