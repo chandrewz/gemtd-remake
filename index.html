@@ -144,6 +144,20 @@ button.primary kbd{background:#ffe3a3;color:#1b1404;border-color:#c79a34}
 .rrow .rparts{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .rrow.ready .rname{color:var(--ok)}
 .tbl-wrap{overflow-x:auto}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:10px}
+.tcard{display:flex;gap:12px;background:var(--slate-2,#1a2133);border:1px solid var(--rule);border-radius:9px;padding:10px 12px;align-items:flex-start}
+.tcard.ready{border-color:var(--ok)}
+.tcard canvas.port{flex-shrink:0;width:84px;height:112px}
+.tcard .tinfo{display:flex;flex-direction:column;gap:3px;min-width:0}
+.tcard .tinfo b{font-weight:600}.tcard.ready .tinfo>b{color:var(--ok)}
+.tcard .tinfo small{color:var(--muted);font-size:12px}
+.tcard ul{margin:3px 0;padding-left:16px;font-size:13px;color:var(--fg)}
+.tcard .rparts em{font-style:normal;color:var(--muted);font-size:12px;margin-right:2px}
+.tcard .chain{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:4px;font-size:13px;color:var(--muted)}
+.tcard .up{display:flex;align-items:center;gap:6px}
+.tcard .up b{display:block;color:var(--fg);font-weight:600}
+.tcard canvas.port.sm{width:36px;height:48px}
+.keysrow .keys{margin-top:6px}
 .gemtype{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid #1f2740}
 .gt-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .gt-head b{font-family:var(--f-display);font-weight:400;font-size:18px}
@@ -176,7 +190,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
             <li>Each round you place five random gems. Every gem blocks the path, so place them to build a maze.</li>
             <li>Keep one gem (or keep it downgraded one quality). The other four turn into rocks that still block. Don't like your five? Pay gold to lift them off and place five new ones. Click a rock and press R to clear it.</li>
             <li>Two identical gems combine one quality higher. Four identical gems combine two qualities higher.</li>
-            <li>Gems that match a recipe combine into special towers. Open the recipe book to plan.</li>
+            <li>Gems that match a recipe combine into special towers. Open Towers to plan.</li>
             <li>Towers rank up every 10 kills for extra damage. Combining keeps the kills.</li>
             <li>Creeps walk Portal → 1 → 2 → 3 → 4 → 5 → Castle by the shortest route. Flyers ignore the maze.</li>
           </ol>
@@ -215,11 +229,10 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
     <section class="card" id="chanceCard"></section>
     <div class="controls">
       <button id="pauseBtn">Pause</button>
-      <button id="bookBtn" class="grow">Recipe book</button>
+      <button id="bookBtn" class="grow">Towers</button>
       <button id="setBtn">Settings</button><button id="restartBtn">Restart</button>
     </div>
     <section class="card dev" id="devCard" hidden></section>
-    <p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Recipes · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> Speed · <kbd>Esc</kbd> Deselect</p>
     <ol class="log" id="log" aria-live="polite"></ol>
   </aside>
 </div>
@@ -233,20 +246,19 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <div class="setrow" id="camRow"><div><b>3D camera</b><small>Drag to pan, right-drag to rotate, scroll to zoom, arrow keys to move.</small></div><button id="camReset">Reset camera</button></div>
       <div class="setrow"><div><b>Game speed</b><small>Hotkeys 1, 2 and 4.</small></div><div class="seg"><button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button></div></div>
       <div class="setrow"><div><b>Show path during waves</b><small>The path always shows while you build. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
+      <div class="setrow keysrow"><div><b>Hotkeys</b><p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Towers · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> Speed · <kbd>Esc</kbd> Deselect</p></div></div>
       <div class="setrow" id="linkRow" hidden><div><b>More</b><small>Opens in a new tab.</small></div><div class="seg"><button id="lbBtn">Leaderboard</button><button id="galBtn">Tower gallery</button></div></div>
     </div>
   </div>
 </div>
 <div class="modal" id="bookModal" hidden>
-  <div class="sheet" role="dialog" aria-label="Recipe book">
+  <div class="sheet" role="dialog" aria-label="Towers">
     <header>
-      <h2>Recipe book</h2>
+      <h2>Towers</h2>
       <div class="tabs">
         <button data-tab="gems" class="on" id="tabGems">Base gems</button>
         <button data-tab="special" id="tabSpecial">Specials</button>
-        <button data-tab="upgrade" id="tabUpgrade">Upgrades</button>
         <button data-tab="ultimate" id="tabUltimate">Ultimates</button>
-        <button data-tab="secret" id="tabSecret">Secret</button>
         <button data-tab="damage" id="tabDamage">Damage table</button>
         <button id="bookClose">Close</button>
       </div>
@@ -2907,7 +2919,7 @@ function renderAll(){
 /* ---------- recipe book ---------- */
 function renderBook(){
   const body = $('bookBody'); const tab = ui.tab;
-  ['gems','special','upgrade','ultimate','secret','damage'].forEach(k=> $('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on', k===tab));
+  ['gems','special','ultimate','damage'].forEach(k=> $('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on', k===tab));
   if (tab==='gems'){
     const TRAIT = {A:'Hits flyers only.', Q:'Very fast attacks at short range.', D:'Hits ground only. 25% chance for double damage.',
       E:'Poisons: damage over time and a slow.', O:'Weak attack, but its aura speeds up nearby towers. Only the strongest speed aura counts; Opal Nebula adds on top.', R:'Splash damage around the target.',
@@ -2925,20 +2937,27 @@ function renderBook(){
       <tbody>${Object.keys(ATK).map(k=>`<tr><td>${DTYPE_NAME[k]}</td>${ATK[k].map(v=>`<td class="${v>=1.5?'hi':v<=.6?'lo':''}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     return;
   }
-  if (tab==='upgrade'){
-    const chains = Object.values(DEFS).filter(d=>d.kind==='special' && d.upg);
-    body.innerHTML = `<p class="hint">Specials upgrade in place for gold. Select the tower and press Upgrade.</p>` + chains.map(d=>`<div class="rrow"><div class="rname">${DEFS[d.upg.to].name}<small>${d.upg.cost} gold</small></div><div class="rparts">${partChip(d.key, ownedCount(d.key)>0)} → ${partChip(d.upg.to)}</div></div>`).join('');
-    return;
+  // Specials and Ultimates: the tower gallery, with live recipe state and each upgrade path on the same card
+  const port = (key, sm) => `<span class="port${sm?' sm':''}" data-port="${key}"></span>`;
+  const chips = (parts) => { const have = parts.map(p=>partState(p)); return {ready: have.every(h=>h===true), html: parts.map((p,i)=>partChip(p, S?have[i]:null)).join('')}; };
+  const stats = d => d.dmg ? `${fmtHit(d)} damage · ${d.cd}s · ${tiles(d.range)} tiles` : 'No attack';
+  const card = (key, label, rows, extra='') => { const d = DEFS[key], ready = rows.some(r=>r.ready);
+    return `<div class="tcard ${ready?'ready':''}">${port(key)}<div class="tinfo"><b>${d.name}</b><small>${label} · ${DTYPE_NAME[d.dtype]} damage</small><small>${stats(d)}</small>
+      <ul>${abilities(d).slice(0,3).map(a=>`<li>${a}</li>`).join('')}</ul>${rows.map(r=>`<div class="rparts"><em>${r.label}</em>${r.html}</div>`).join('')}${extra}</div></div>`; };
+  let html = '';
+  if (tab==='special'){
+    html = `<p class="hint">Combine gems into special towers. Either all parts come from this round’s five placed gems, or all parts are towers you already kept (combine those during a wave). Rare one-shots can only be made from this round’s gems. Specials then upgrade in place for gold. Green parts are on your board; dotted ones are among this round’s gems, not kept yet.</p><div class="tgrid">` +
+      RECIPES.filter(R=>R.group==='special' || R.group==='rare').map(R=>{ const d = DEFS[R.to], c = chips(R.parts);
+        let chain = '', k = R.to; while (DEFS[k].upg){ const u = DEFS[k].upg; chain += `<span class="up">→ ${port(u.to, true)}<span><b>${DEFS[u.to].name}</b><small>${u.cost} gold</small></span></span>`; k = u.to; }
+        return card(R.to, d.rare ? 'Rare one-shot' : 'Special', [{label: d.rare ? 'One-shot' : 'Recipe', ...c}], chain ? `<div class="chain">${chain}</div>` : ''); }).join('') + '</div>';
+  } else {
+    html = `<p class="hint">Each ultimate has two recipes: fuse a fully upgraded special with two Great gems, or place all five qualities (Chipped to Perfect) of one gem type in the same round as a one-shot. Ultimates deal chaos damage, which ignores armor type.</p><div class="tgrid">` +
+      [...new Set(RECIPES.filter(R=>R.group==='ultimate'||R.group==='secret').map(R=>R.to))].map(key => {
+        const rows = RECIPES.filter(R=>R.to===key && (R.group==='ultimate'||R.group==='secret')).map(R => ({label: R.group==='secret' ? 'One-shot' : 'Fuse', ...chips(R.parts)}));
+        return card(key, 'Ultimate', rows); }).join('') + '</div>';
   }
-  const rs = RECIPES.filter(R=>R.group===tab || (tab==='special' && R.group==='rare'));
-  const intro = {special:'Combine these gems into special towers. Either all parts come from this round’s five placed gems, or all parts are towers you already kept (combine those during a wave). Rounds never mix with kept towers.',
-    ultimate:'Ultimates fuse a fully upgraded special with two Great gems, or appear as a one-shot (see the Secret tab). They deal chaos damage, which ignores armor type.',
-    secret:'The other way to make each ultimate: place all five qualities (Chipped through Perfect) of one gem type in the same round. One-shot only, never from towers already on the board.'}[tab];
-  body.innerHTML = `<p class="hint">${intro} Solid green parts are on your board; dotted ones are among this round’s gems, not kept yet.</p>` + rs.map(R=>{
-    const have = R.parts.map(p=>partState(p)); const ready = have.every(h=>h===true);
-    const d = DEFS[R.to];
-    return `<div class="rrow ${ready?'ready':''}"><div class="rname">${d.name}<small>${abilities(d).slice(0,2).join(' · ')}</small></div><div class="rparts">${R.parts.map((p,i)=>partChip(p, S?have[i]:null)).join('')}</div></div>`;
-  }).join('');
+  body.innerHTML = html;
+  body.querySelectorAll('[data-port]').forEach(el => { const c = miniSprite(el.dataset.port); c.className = el.className; if (el.classList.contains('sm')){ c.style.width = '36px'; c.style.height = '48px'; } el.replaceWith(c); });
 }
 
 /* ---------- end screen ---------- */

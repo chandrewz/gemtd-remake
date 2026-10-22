@@ -506,7 +506,7 @@ let down = null;
 let tip = null, tipFor = null;
 function onMove(ev){ const c = tileAt(ev); if (c) G.input.hover(c.x, c.y); else G.input.leave();
   const t = c && c.t; if (!tip){ tip = document.createElement('div'); tip.className = 'tip3d'; tip.hidden = true; document.body.appendChild(tip); }
-  if (t !== tipFor){ tipFor = t; tip.hidden = !t; if (t){ const d = G.describe(t); tip.innerHTML = `${d.name}<small>${d.sub}</small>`; } }
+  if (t !== tipFor){ tipFor = t; tip.hidden = !t; if (t) tip.textContent = G.describe(t).name; }
   tip.style.left = ev.clientX + 'px'; tip.style.top = ev.clientY + 'px'; }
 function hideTip(){ tipFor = null; if (tip) tip.hidden = true; }
 function onDown(ev){ if (ev.button === 0) down = {x:ev.clientX, y:ev.clientY, t:performance.now()}; }
