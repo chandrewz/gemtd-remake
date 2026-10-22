@@ -114,7 +114,22 @@ function habitGeo(t, r, h, seed, rough){
     const p = g.attributes.position; for (let k=0;k<p.count;k++){ const d = 1 + (fbm(p.getX(k)*6+seed, p.getY(k)*6, p.getZ(k)*6)-.5)*.2; p.setXYZ(k, p.getX(k)*d, p.getY(k)*d*1.15, p.getZ(k)*d); }
     g.computeVertexNormals(); g.translate(0, r*1.6 + h*.25, 0); return g.toNonIndexed(); }
   const H = HABIT[t]; return crystal(r, h, {n:H.n, tip:H.tip, tipH:r*H.tipK, taper: t==='R' ? 1.05 : .82, seed, jit: rough ? .28 : .06}); }
+// Perfect and Great: a wide, faceted mass of crystal like a chunk of glacier, with big points breaking out of the top
+function glacier(q){
+  const W = q===6 ? .4 : .31, H = q===6 ? .5 : .36, peaks = q===6 ? 6 : 4, R = mkRng(q*31);
+  let g = new THREE.IcosahedronGeometry(1, 1); g.deleteAttribute('normal'); g.deleteAttribute('uv'); g = mergeVertices(g);
+  const p = g.attributes.position;
+  for (let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i), z=p.getZ(i), n = .85 + R()*.3;
+    const yy = y < -.2 ? 0 : (y + .2)/1.2 * H * (.75 + R()*.5);   // flat underside, jagged top
+    p.setXYZ(i, x*W*n*(1 - Math.max(0,y)*.25), yy, z*W*n*(1 - Math.max(0,y)*.25)); }
+  const body = g.toNonIndexed(); body.computeVertexNormals(); const parts = [body];
+  for (let i=0;i<peaks;i++){ const main = i===0, a = i/peaks*Math.PI*2 + .4, d = main ? 0 : W*(.45 + R()*.15);
+    const r = main ? W*.42 : W*(.26 + R()*.08), h = main ? H*1.15 : H*(.55 + R()*.35);
+    const c = crystal(r, h, {n:5, tipH:r*1.3, taper:.7, jit:.2, seed:q*7+i}); c.rotateY(R()*6); if (!main) c.rotateZ(-(.25 + R()*.25));
+    c.rotateY(-a); c.translate(Math.cos(a)*d, H*.35, Math.sin(a)*d); parts.push(c); }
+  const geo = mergeGeometries(parts); geo.computeVertexNormals(); return {geo, height:H*1.15 + W*.42*1.3}; }
 function gemCluster(t, q){
+  if (q>=5){ const {geo, height} = glacier(q), core = geo.clone(); core.scale(.6,.62,.6); core.translate(0, height*.08, 0); return {shell:geo, core, height}; }
   const H = HABIT[t], shells = [], cores = [], height = LEVEL.h[q], n = LEVEL.sides[q] + 1;
   for (let i=0;i<n;i++){
     const main = i===0, ang = main ? 0 : (i-1)/(n-1)*Math.PI*2 + .6, dist = main ? 0 : LEVEL.r[q]*1.7;
