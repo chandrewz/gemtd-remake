@@ -2487,6 +2487,8 @@ function drawGemShape(c, cx, cy, s, shape, color, light, dark){
 function makeSprite(key, variant){
   const id = key + ':' + (variant||0);
   if (sprites.has(id)) return sprites.get(id);
+  if (view3d.mod){ try {   // the 3D models, pictured once, stand in for the hand-drawn art
+    const spr = view3d.mod.portrait(key==='rock' ? 'rock' + (1 + (variant||0) % 5) : key, CS*DPR); spr.tower = true; sprites.set(id, spr); return spr; } catch(e){ console.error(e); } }
   const px = Math.ceil(CS*DPR*1.5), o = document.createElement('canvas'); o.width = o.height = px;
   const c = o.getContext('2d'), cx = px/2, cy = px/2, cell = CS*DPR, d = DEFS[key];
   if (key==='rock'){
@@ -2754,6 +2756,7 @@ function miniSprite(key){
   const W = tall ? 84 : 64, H = tall ? 112 : 64, id = `${key}@${DPR}`;
   const c = document.createElement('canvas'); c.width = W*DPR; c.height = H*DPR; c.style.width = W+'px'; c.style.height = H+'px';
   const g = c.getContext('2d');
+  if (!portraits.has(id) && view3d.mod){ try { const p = view3d.mod.portrait(key==='rock' ? 'rock1' : key, c.height/2.45*2*(d.kind==='gem' ? 3.2 - d.q*.3 : 1)); p.p3d = true; portraits.set(id, p); } catch(e){ console.error(e); } }
   if (!portraits.has(id)){
     let img;
     if (d.kind==='gem'){ img = document.createElement('canvas'); img.width = c.width; img.height = c.height; Art.drawGem(img.getContext('2d'), c.width/2, c.height/2, c.width*.46, d.type, d.q, 0); }
@@ -2762,7 +2765,7 @@ function miniSprite(key){
     portraits.set(id, img);
   }
   const img = portraits.get(id);
-  if (tall){
+  if (tall || img.p3d){
     if (!img.bb){   // tight box around the solid parts of the render, ignoring soft glows
       const d2 = img.getContext('2d').getImageData(0,0,img.width,img.height).data; let x0=img.width, y0=img.height, x1=0, y1=0;
       for (let y=0;y<img.height;y++) for (let x=0;x<img.width;x++){ if (d2[(y*img.width+x)*4+3] > 110){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
@@ -2927,8 +2930,7 @@ function renderBook(){
     body.innerHTML = `<p class="hint">Eight gem types in six qualities. Each round you place five random gems; chance upgrades raise the odds of better qualities. Two identical gems combine one quality higher, four combine two higher. Great comes only from combining.</p>` +
       TYPES.map(t=>`<div class="gemtype"><div class="gt-head"><b style="color:${GT[t].color}">${GT[t].name} (${SH[t]})</b><span>${TRAIT[t]} Strong vs ${AORDER.filter((a,i)=>ATK[t][i]>=1.5).join(', ')||'—'}.</span></div>
         <div class="gt-row">${[1,2,3,4,5,6].map(q=>{ const d=DEFS[t+q]; return `<div class="gt-cell"><span data-gem="${t+q}"></span><b>${QN[q]}</b><small>${fmtHit(d)} dmg · ${d.cd}s · ${tiles(d.range)} tiles</small>${d.poison?`<small>poison ${d.poison.dps}/s, ${pct(d.poison.pct)} slow</small>`:''}${d.spdAura?`<small>+${pct(d.spdAura.pct)} speed aura</small>`:''}${d.multi?`<small>${d.multi} targets</small>`:''}${d.splash?`<small>splash ${d.splash.r} tiles</small>`:''}</div>`; }).join('')}</div></div>`).join('');
-    body.querySelectorAll('[data-gem]').forEach(el => { const d=DEFS[el.dataset.gem], px=60, c=document.createElement('canvas'); c.width=c.height=px*DPR; c.style.width=c.style.height=px+'px';
-      const g=c.getContext('2d'); g.scale(DPR,DPR); Art.drawGem(g, px/2, px/2, px*.36, d.type, d.q, 0); el.replaceWith(c); });
+    body.querySelectorAll('[data-gem]').forEach(el => { const c = miniSprite(el.dataset.gem); c.style.width = c.style.height = '60px'; el.replaceWith(c); });
     return;
   }
   if (tab==='damage'){
@@ -3202,7 +3204,9 @@ $('v2d').onclick = () => setView(false); $('v3d').onclick = () => setView(true);
 $('qHigh').onclick = $('qLow').onclick = ev => { view3d.q = ev.target.dataset.q; try { localStorage.setItem('gemtd.q3d', view3d.q); } catch(e){} if (view3d.on) view3d.mod.setQuality(view3d.q); renderSettings(); };
 $('camReset').onclick = () => { if (view3d.mod) view3d.mod.resetView(); };
 $('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; renderSettings(); };
-try { if (localStorage.getItem('gemtd.view')==='3d') setView(true); } catch(e){}
+let wantView = '3d'; try { wantView = localStorage.getItem('gemtd.view') || '3d'; } catch(e){}
+import('./view3d.js').then(m => { view3d.mod = m; sprites.clear(); portraits.clear(); ui.dirty = true; if (wantView==='3d') setView(true); })
+  .catch(e => { console.error('3D view unavailable', e); renderSettings(); });
 function snapshot(){
   if (!S) return {};
   return {s:{diff:S.diff, wave:S.wave, gold:S.gold, lives:S.lives, chance:S.chance, phase:S.phase, placed:S.placed, totalKills:S.totalKills,

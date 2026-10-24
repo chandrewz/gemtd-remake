@@ -1071,18 +1071,55 @@ function tick(){
 }
 
 /* ================= start / stop ================= */
-let built = false;
+let built = false, cored = false;
+// the renderer, reflections, textures and materials: shared by the board and the tower portraits
+function core(){ if (cored) return; cored = true;
+  renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+  canvas = renderer.domElement; canvas.className = 'board3d';
+  const pmrem = new THREE.PMREMGenerator(renderer); envTex = pmrem.fromScene(studio(), .02).texture;
+  makeTextures(); makeMaterials(); }
+/* ---------- portraits: a tower rendered once to a transparent picture, for the 2D board, the inspector and the gallery ---------- */
+let pScene, pCam, pComposer, pTarget, pByte, pCopy, pCopyScene, pCopyCam;
+function portraitRig(){ if (pScene) return; core();
+  pScene = new THREE.Scene();
+  const sun = new THREE.DirectionalLight(0xfff0d4, 2.7); sun.position.set(-3, 6, 4); pScene.add(sun);
+  pScene.add(new THREE.HemisphereLight(0xd6e8ff, 0x6a6048, 1.0));
+  const k = .5; pCam = new THREE.OrthographicCamera(-.85, .85, 2.08, -.32, .1, 50);
+  const pitch = .62; pCam.position.set(0, Math.sin(pitch)*10, Math.cos(pitch)*10); pCam.lookAt(0, 0, 0); }
+// a W×H cell picture (1.7 × 2.4 cells), tile centre .32 cells above the bottom edge, like the old tower sprites
+export function portrait(key, cellPx){
+  portraitRig();
+  const W = Math.max(8, Math.ceil(cellPx*1.7)), H = Math.max(8, Math.ceil(cellPx*2.4)), SS = 2, w = W*SS, h = H*SS;
+  if (!pTarget || pTarget.width !== w || pTarget.height !== h){
+    if (pTarget) pTarget.dispose(); pTarget = new THREE.WebGLRenderTarget(w, h, {type:THREE.HalfFloatType});
+    pComposer = new EffectComposer(renderer, pTarget); pComposer.renderToScreen = false; pComposer.setPixelRatio(1); pComposer.setSize(w, h);
+    pComposer.addPass(new RenderPass(pScene, pCam)); pComposer.addPass(new OutputPass()); }
+  const inst = instance(key); pScene.add(inst.g);
+  const keepT = renderer.getRenderTarget(), keepC = new THREE.Color(); renderer.getClearColor(keepC); const keepA = renderer.getClearAlpha();
+  renderer.setClearColor(0x000000, 0);
+  pComposer.render();
+  // copy the tone-mapped result into an 8-bit target so it can be read back
+  if (!pByte || pByte.width !== w || pByte.height !== h){ if (pByte) pByte.dispose(); pByte = new THREE.WebGLRenderTarget(w, h); }
+  if (!pCopy){ pCopy = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({uniforms:{t:{value:null}}, depthTest:false, depthWrite:false,
+    vertexShader:`varying vec2 u; void main(){ u = uv; gl_Position = vec4(position.xy, 0., 1.); }`, fragmentShader:`uniform sampler2D t; varying vec2 u; void main(){ gl_FragColor = texture2D(t, u); }`}));
+    pCopy.frustumCulled = false; pCopyScene = new THREE.Scene(); pCopyScene.add(pCopy); pCopyCam = new THREE.Camera(); }
+  pCopy.material.uniforms.t.value = pComposer.readBuffer.texture;
+  renderer.setRenderTarget(pByte); renderer.clear(); renderer.render(pCopyScene, pCopyCam);
+  const px = new Uint8Array(w*h*4); renderer.readRenderTargetPixels(pByte, 0, 0, w, h, px);
+  renderer.setRenderTarget(keepT); renderer.setClearColor(keepC, keepA); pScene.remove(inst.g);
+  const big = document.createElement('canvas'); big.width = w; big.height = h; const bg = big.getContext('2d'), img = bg.createImageData(w, h);
+  for (let y=0;y<h;y++) img.data.set(px.subarray((h-1-y)*w*4, (h-y)*w*4), y*w*4);   // flip: GL rows run bottom-up
+  bg.putImageData(img, 0, 0);
+  const out = document.createElement('canvas'); out.width = W; out.height = H; const o = out.getContext('2d'); o.imageSmoothingQuality = 'high'; o.drawImage(big, 0, 0, W, H);
+  return out; }
 export function start(el, anchor){
   host = el;
   if (!built){
-    renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance'});
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
-    canvas = renderer.domElement; canvas.className = 'board3d';
+    core();
     scene = new THREE.Scene();
-    const pmrem = new THREE.PMREMGenerator(renderer); envTex = pmrem.fromScene(studio(), .02).texture;
-    makeTextures(); makeMaterials();
     camera = new THREE.PerspectiveCamera(42, 1, .1, 400);
     controls = new MapControls(camera, canvas);
     Object.assign(controls, {enableDamping:true, dampingFactor:.08, screenSpacePanning:false, minDistance:6, maxDistance:70, minPolarAngle:.15, maxPolarAngle:1.18, zoomSpeed:1.1, keyPanSpeed:22});

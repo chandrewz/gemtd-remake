@@ -43,9 +43,10 @@ ul{margin:0;padding-left:16px;font-size:13px;display:flex;flex-direction:column;
 </style>
 <div class="wrap">
   <header><nav class="sitenav" id="sitenav" hidden><a href="./">Play the game</a><a href="leaderboard.html">Leaderboard</a></nav><h1>Recipe <span>towers</span></h1>
-  <p>Every combined tower in the game as it looks now, with its recipe, stats and abilities. Rows read left to right through the upgrade tiers. Every tower is a 3D render in the Lance Spire style: a stepped metal base, a body for its family and a glowing gem. A board at the bottom shows them at real size.</p></header>
+  <p>Every gem and combined tower in the game, with its recipe, stats and abilities, pictured from its 3D model. Rows read left to right through the upgrade tiers.</p></header>
   <div id="out"></div>
 </div>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script>
 'use strict';
 if (/\.github\.io$/i.test(location.hostname)) document.getElementById('sitenav').hidden = false;   // links only make sense on the live site
@@ -1742,8 +1743,9 @@ function gemCanvas(key, px, animate){
   const c=cv.getContext('2d'); c.scale(DPRG,DPRG);
   const u = px*.68;
   const paint = t => { c.clearRect(0,0,W,H); if (!tall) Art.drawGem(c,px/2,px/2,px*.3,d.type,d.q,0); else Tower3D.drawTower(c, W/2, H - u*.32, u, key, d); };
-  paint(0); if (animate) live.push(paint); return cv;
+  paint(0); if (animate) live.push(paint); pics.push({cv, key, W, H}); return cv;
 }
+const pics = [];
 function chip(key){ const d=DEFS[key]; const el=document.createElement('span'); el.className='chip'; el.appendChild(gemCanvas(key,22,false)); el.append(d.kind==='gem' ? `${d.name} (${SH[d.type]}${d.q})` : d.name); return el; }
 const TIERNAME = ['','Special · tier 1','Special · tier 2','Special · tier 3','Ultimate','Secret stone'];
 function card(key, how){
@@ -1785,17 +1787,17 @@ section('The Great Stone', 'Created by combining two Great gems (or pushing a Pe
 { const g=document.createElement('div'); g.className='grid4'; g.style.marginTop='10px'; g.appendChild(card('bryvx',{})); out.appendChild(g); }
 section('Ultimates', 'Two ways to make each: a fully upgraded special plus two Great gems, or a one-shot of Chipped through Perfect of one type placed in the same round.');
 { const g=document.createElement('div'); g.className='grid4'; g.style.marginTop='10px'; RECIPES.filter(r=>r.group==='ultimate').forEach(R=>g.appendChild(card(R.to,{recipe:R, alt:RECIPES.find(x=>x.group==='secret'&&x.to===R.to)}))); out.appendChild(g); }
-section('On the board', 'Every combined tower at real game size (22px cells), among rocks and gems.');
-{ const cs=22, cols=26, rows=13, W=cols*cs, H=rows*cs, cv=document.createElement('canvas'); cv.width=W*DPRG; cv.height=H*DPRG; cv.style.width=W+'px'; cv.style.height=H+'px'; cv.style.maxWidth='100%'; cv.style.marginTop='10px'; cv.style.borderRadius='8px'; cv.style.border='1px solid #2a3350';
-  const c=cv.getContext('2d'); c.scale(DPRG,DPRG); const wrap=document.createElement('div'); wrap.style.overflowX='auto'; wrap.appendChild(cv); out.appendChild(wrap);
-  const keys = Object.keys(DEFS).filter(k=>DEFS[k].kind==='special'); const gems=['R3','S2','E4','T1','A5','Q3','D6','O4'];
-  const place=[]; let i=0; for (let y=1;y<rows-1;y+=2) for (let x=1;x<cols-1;x+=2){ if (i<keys.length) place.push([x,y,keys[i++]]); }
-  const paint = t => { c.fillStyle='#121725'; c.fillRect(0,0,W,H);
-    for (let y=0;y<rows;y++) for (let x=0;x<cols;x++){ if ((x+y)%2===0){ c.fillStyle='rgba(255,255,255,.018)'; c.fillRect(x*cs,y*cs,cs,cs);} }
-    c.strokeStyle='rgba(140,155,200,.07)'; c.beginPath(); for(let k=0;k<=cols;k++){c.moveTo(k*cs+.5,0);c.lineTo(k*cs+.5,H);} for(let k=0;k<=rows;k++){c.moveTo(0,k*cs+.5);c.lineTo(W,k*cs+.5);} c.stroke();
-    let gi=0; for (let y=1;y<rows;y+=2) for (let x=2;x<cols;x+=2){ if ((x+y)%3===0){ Art.drawGem(c,(x+.5)*cs,(y+.5)*cs,cs*.46,gems[gi%8][0],+gems[gi%8][1],0); gi++; } }
-    for (const [x,y,k] of place.sort((a,b)=>a[1]-b[1])) Tower3D.drawTower(c,(x+.5)*cs,(y+.5)*cs+cs*.3,cs,k,DEFS[k]); };
-  paint(0); }
 const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const t0=performance.now(); (function tick(now){ if(!reduce) for(const f of live) f((now-t0)/1000); requestAnimationFrame(tick); })(t0);
+// swap every picture for the game's 3D model, rendered once, cropped to the tower and fitted to its box
+window.GemGame = { consts:{GW:1, GH:1, PORTAL:{x:0,y:0}, CASTLE:{x:0,y:0}, CPS:[], NOBUILD:new Uint8Array(1), IDX:(x,y)=>0, DEFS, GT, ARMOR, QN, RECIPES}, Tower3D, state:()=>null };
+import('./view3d.js').then(m => {
+  live.length = 0;
+  for (const {cv, key, W, H} of pics){ let img; try { img = m.portrait(key, Math.max(W, H)*DPRG*(DEFS[key].kind==='gem' ? 3.2 - DEFS[key].q*.3 : 1.1)); } catch(e){ console.error(e); continue; }
+    const d2 = img.getContext('2d').getImageData(0, 0, img.width, img.height).data; let x0 = img.width, y0 = img.height, x1 = 0, y1 = 0;
+    for (let y=0;y<img.height;y++) for (let x=0;x<img.width;x++) if (d2[(y*img.width+x)*4+3] > 90){ if (x<x0) x0=x; if (x>x1) x1=x; if (y<y0) y0=y; if (y>y1) y1=y; }
+    if (x1 <= x0) continue;
+    const bw = x1-x0+1, bh = y1-y0+1, c = cv.getContext('2d'); c.setTransform(1,0,0,1,0,0); c.clearRect(0, 0, cv.width, cv.height);
+    const pad = .06, k = Math.min(cv.width*(1-2*pad)/bw, cv.height*(1-2*pad)/bh); c.drawImage(img, x0, y0, bw, bh, (cv.width-bw*k)/2, (cv.height-bh*k)/2, bw*k, bh*k); }
+}).catch(e => console.error('3D models unavailable', e));
 </script>
