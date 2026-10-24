@@ -3175,7 +3175,7 @@ window.gemDev = {
   clear(){ try { localStorage.removeItem(DEV_KEY); } catch(e){} renderDev(); },
 };
 /* ---------- 3D view: an optional renderer (view3d.js) that reads the same state; rules and replays are untouched ---------- */
-window.GemGame = { consts:{GW, GH, PORTAL, CASTLE, CPS, NOBUILD, IDX, DEFS, GT, ARMOR, QN},
+window.GemGame = { consts:{GW, GH, PORTAL, CASTLE, CPS, NOBUILD, IDX, DEFS, GT, ARMOR, QN, RECIPES},
   state:()=>S, hover:()=>hover, ui, describe:t => t.key==='rock' ? {name:'Rock', sub:'Press R to remove'} : {name:DEFS[t.key].name, sub: DEFS[t.key].kind==='gem' ? `${DTYPE_NAME[DEFS[t.key].dtype]} damage` : t.key==='bryvx' ? 'Legendary' : DEFS[t.key].rare ? 'Rare one-shot' : 'Special'}, emptyRoute:()=>EMPTY_ROUTE, waveInfo, flyPts:()=>FLY_PTS, U, Tower3D,
   input:{hover:boardHover, click:boardClick, leave:boardLeave} };
 const view3d = {on:false, mod:null, loading:false, q:'high'};
