@@ -73,7 +73,7 @@ const ATK = {
   O:[1,1.9,.8,.7,1,.4,1],     R:[1.8,.8,1,.5,1,1,.8], S:[1,1,1,1,1,1.75,1],     T:[.5,1,.6,.7,1.6,1,1.2],
   X:[1,1,1,1,1,1,1],
 };
-const DTYPE_NAME = {A:'Amethyst',Q:'Aquamarine',D:'Diamond',E:'Emerald',O:'Opal',R:'Ruby',S:'Sapphire',T:'Topaz',X:'Chaos'};
+const DTYPE_NAME = {A:'Amethyst',Q:'Aquamarine',D:'Diamond',E:'Emerald',O:'Opal',R:'Ruby',S:'Sapphire',T:'Topaz',X:'Pure'};
 const armorMult = a => a >= 0 ? 1/(1+0.06*a) : 2 - Math.pow(0.94, -a);
 const U = u => u/100 + 0.5;      // Warcraft units -> tiles (incl. half-tile tower footprint)
 
@@ -156,7 +156,7 @@ sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
 sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
-sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.3,dur:3}, magicAmp:{pct:.25,dur:4}});
+sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.3,dur:3}, magicAmp:{pct:.25,dur:4,r:1.75}});
 
 // one fixed damage value per hit: the average of the old dice roll (crits stay random)
 for (const d of Object.values(DEFS)) if (d.dmg) d.hit = Math.round(d.dmg + d.nd*(d.dice+1)/2);
@@ -1728,7 +1728,7 @@ function abilities(d){
   if (d.radslow) a.push(`Slows enemies ${pct(d.radslow.pct)} within ${tiles(d.radslow.r)} tiles${d.radslow.stack?' (adds on top of other slows)':''}`);
   if (d.spdAura) a.push(`Aura: +${pct(d.spdAura.pct)} attack speed to towers within ${tiles(d.spdAura.r)} tiles${d.spdAura.stack?' (adds on top of other opal auras)':' (highest speed aura applies)'}`);
   if (d.magic) a.push('Magic damage: ignores armor');
-  if (d.magicAmp) a.push(`Hits make enemies within ${d.splash ? d.splash.r : 0} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
+  if (d.magicAmp) a.push(`Hits make enemies within ${d.magicAmp.r} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
   if (d.dmgAura) a.push(`Aura: +${pct(d.dmgAura.pct)} damage to towers within ${tiles(d.dmgAura.r)} tiles`);
   if (d.rangeAura) a.push(`Aura: +${pct(d.rangeAura.pct)} attack range to towers within ${tiles(d.rangeAura.r)} tiles`);
   if (d.armorAura) a.push(`Aura: −${d.armorAura.amt} armor to ${d.armorAura.air&&d.armorAura.ground?'all enemies':d.armorAura.air?'flyers':'ground units'} within ${tiles(d.armorAura.r)} tiles`);

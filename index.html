@@ -324,7 +324,7 @@ const ATK = {
   O:[1,1.9,.8,.7,1,.4,1],     R:[1.8,.8,1,.5,1,1,.8], S:[1,1,1,1,1,1.75,1],     T:[.5,1,.6,.7,1.6,1,1.2],
   X:[1,1,1,1,1,1,1],
 };
-const DTYPE_NAME = {A:'Amethyst',Q:'Aquamarine',D:'Diamond',E:'Emerald',O:'Opal',R:'Ruby',S:'Sapphire',T:'Topaz',X:'Chaos'};
+const DTYPE_NAME = {A:'Amethyst',Q:'Aquamarine',D:'Diamond',E:'Emerald',O:'Opal',R:'Ruby',S:'Sapphire',T:'Topaz',X:'Pure'};
 const armorMult = a => a >= 0 ? 1/(1+0.06*a) : 2 - Math.pow(0.94, -a);
 const U = u => u/100 + 0.5;      // Warcraft units -> tiles (incl. half-tile tower footprint)
 
@@ -407,7 +407,7 @@ sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
 sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
-sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.3,dur:3}, magicAmp:{pct:.25,dur:4}});
+sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.3,dur:3}, magicAmp:{pct:.25,dur:4,r:1.75}});
 
 // one fixed damage value per hit: the average of the old dice roll (crits stay random)
 for (const d of Object.values(DEFS)) if (d.dmg) d.hit = Math.round(d.dmg + d.nd*(d.dice+1)/2);
@@ -467,6 +467,8 @@ const WAVES = [
  [19500,7,'Green',380,0],[23000,12,'Blue',390,0],[26000,15,'Yellow',400,0],[13000,5,'Pink',370,1],[28500,15,'Red',400,0],
  [30000,15,'Blazed',400,0],[33000,15,'White',400,0],[15000,5,'Pink',380,1],[35000,15,'Green',400,0],[545455,15,'Green',300,0],
 ];
+// magic resistance: a share of magic damage (burn, poison, Wings of Topaz) the wave shrugs off. Pure damage ignores it.
+const MRES = {10:.15, 19:.2, 27:.25, 30:.2, 31:.2, 35:.3, 36:.25, 40:.3, 42:.35, 44:.4, 46:.3, 50:.25};
 const WNAMES = ['Frenzied Pig','Swift Frog','Sturdy Yak','Dusk Moth','Smart Robot','Tardy Stump','Satisfied Lizard','Lantern Bat','Husky','Warhound Alpha',
  'Hairy Sheep','Paper Kite','Funny Alpaca','Pig Princess','Bulldog','Feathered Imp','Young Demon','Belted Chicken','Bajie','Tiger Kite',
  'Ripper','Lockjaw','Trapjaw','Storm Gull','Machjaw','Skateboard Flamingo','Bookwyrm','Gilded Beetle','Rechargeable Shark','Elder Golem',
@@ -482,17 +484,18 @@ const ROMAN = n => ['','I','II','III','IV','V','VI','VII','VIII','IX','X'][n] ||
 function endlessInfo(w){
   const m = DIFF[S.diff].hp, n = w-50, g = Math.pow(ENDLESS_GROWTH, n), cyc = Math.floor((n-1)/10)+2;
   if (w % 10 === 0){ const [hp,armor,type,speed] = WAVES[49];
-    return {w, name:`${WNAMES[49]} ${ROMAN(cyc)}`, hp:Math.round(hp*m*g), armor:armor+Math.floor(n/5), type, speed:Math.min(380,speed+n), fly:false, count:1, boss:true, leak:100, bounty:50+w}; }
+    return {w, name:`${WNAMES[49]} ${ROMAN(cyc)}`, hp:Math.round(hp*m*g), armor:armor+Math.floor(n/5), type, speed:Math.min(380,speed+n), fly:false, count:1, boss:true, leak:100, bounty:50+w, mr:MRES[50]}; }
   const i = 40 + ((n-1)%10) % 9, [hp,armor,type,speed,fly] = WAVES[i];
-  return {w, name:`${WNAMES[i]} ${ROMAN(cyc)}`, hp:Math.round(hp*m*g), armor:armor+Math.floor(n/5), type, speed:Math.min(450,speed+n*2), fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:1+Math.floor(w/5)};
+  return {w, name:`${WNAMES[i]} ${ROMAN(cyc)}`, hp:Math.round(hp*m*g), armor:armor+Math.floor(n/5), type, speed:Math.min(450,speed+n*2), fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:1+Math.floor(w/5), mr:MRES[i+1]||0};
 }
 function waveInfo(w){
   if (w > 50) return endlessInfo(w);
   const [hp,armor,type,speed,fly] = WAVES[w-1];
   const m = DIFF[S.diff].hp;
-  if (w === 50) return {w, name:WNAMES[49], hp:Math.round(hp*m), armor, type, speed, fly:false, count:1, boss:true, leak:100, bounty:0};
-  if (w % 10 === 0) return {w, name:WNAMES[w-1], hp:Math.round(hp*(8 + (w/10-1)*4/3)*m*(w===20 ? .75 : 1)), armor:armor+2, type, speed:Math.round(speed*.85), fly:!!fly, count:1, boss:true, leak:10+w/2, bounty:20+w};
-  return {w, name:WNAMES[w-1], hp:Math.round(hp*m), armor, type, speed, fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:1+Math.floor(w/5)};
+  const mr = MRES[w] || 0;
+  if (w === 50) return {w, name:WNAMES[49], hp:Math.round(hp*m), armor, type, speed, fly:false, count:1, boss:true, leak:100, bounty:0, mr};
+  if (w % 10 === 0) return {w, name:WNAMES[w-1], hp:Math.round(hp*(8 + (w/10-1)*4/3)*m*(w===20 ? .75 : 1)), armor:armor+2, type, speed:Math.round(speed*.85), fly:!!fly, count:1, boss:true, leak:10+w/2, bounty:20+w, mr};
+  return {w, name:WNAMES[w-1], hp:Math.round(hp*m), armor, type, speed, fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:1+Math.floor(w/5), mr};
 }
 
 /* ============================================================
@@ -552,7 +555,7 @@ const LS_KEY = 'gemtd-web-best';
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.25d';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.25e';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
@@ -755,7 +758,7 @@ function spawnEnemy(){
   const W = S.waveCur;
   S.enemies.push({id:S.nextId++, x:PORTAL.x+.5, y:PORTAL.y+.5, pts: W.fly ? FLY_PTS : S.route.pts, i:1, prog:0,
     hp:W.hp, max:W.hp, armor:W.armor, type:W.type, ai:AORDER.indexOf(W.type), speed:W.speed/100, fly:W.fly, boss:W.boss,
-    leak:W.leak, bounty:W.bounty, frost:null, poison:null, stun:0, shred:null, aSlow:0, aArmor:0, dead:false, ang:0, hitT:0});
+    leak:W.leak, bounty:W.bounty, mr:W.mr||0, frost:null, poison:null, stun:0, shred:null, aSlow:0, aArmor:0, dead:false, ang:0, hitT:0});
 }
 function endWave(){
   const W = S.waveCur;
@@ -790,7 +793,7 @@ function recomputeAuras(){
   S.auraDirty = false; ui.dirty = true;
 }
 const rollDmg = d => d.hit;   // fixed damage, no roll
-const mAmp = e => 1 + (e.amp && e.amp.t > 0 ? e.amp.pct : 0);
+const mAmp = e => (1 + (e.amp && e.amp.t > 0 ? e.amp.pct : 0)) * (1 - (e.mr||0));
 function applyAmp(e, a){ if (!e.amp || e.amp.t <= 0 || a.pct >= e.amp.pct) e.amp = {pct:a.pct, t:a.dur}; else e.amp.t = Math.max(e.amp.t, a.dur); }
 const effArmor = e => e.armor - (e.shred && e.shred.t>0 ? e.shred.amt : 0) - e.aArmor;
 
@@ -814,7 +817,7 @@ function onHit(t, e, primary=true){
   let crit = false;
   if (d.crit && rHit() < d.crit.c){ amt *= d.crit.m; crit = true; }
   const base = amt;
-  amt *= ATK[d.dtype][e.ai] * (d.magic ? mAmp(e) : armorMult(effArmor(e)));
+  amt *= ATK[d.dtype][e.ai] * (d.magic ? mAmp(e) : d.dtype==='X' ? 1 : armorMult(effArmor(e)));
   if (d.magicAmp && primary) applyAmp(e, d.magicAmp);
   if (crit && primary) floater(e.x, e.y-.5, Math.round(amt)+'!', d.color);
   if (d.frost && primary) applyFrost(e, d.frost);
@@ -826,9 +829,9 @@ function onHit(t, e, primary=true){
     for (const o of S.enemies){
       if (o===e || o.dead || o.fly!==e.fly) continue;
       if (Math.hypot(o.x-e.x, o.y-e.y) <= d.splash.r){
-        hurt(o, base*d.splash.pct*ATK[d.dtype][o.ai]*(d.magic ? mAmp(o) : armorMult(effArmor(o))), t);
+        hurt(o, base*d.splash.pct*ATK[d.dtype][o.ai]*(d.magic ? mAmp(o) : d.dtype==='X' ? 1 : armorMult(effArmor(o))), t);
         if (d.splash.frost && d.frost) applyFrost(o, d.frost);
-        if (d.magicAmp) applyAmp(o, d.magicAmp);
+        if (d.magicAmp && Math.hypot(o.x-e.x, o.y-e.y) <= d.magicAmp.r) applyAmp(o, d.magicAmp);
       }
     }
     S.fx.push({kind:'ring', x:e.x, y:e.y, r:d.splash.r, t:0, life:.25, color:d.color});
@@ -2742,7 +2745,7 @@ function abilities(d){
   if (d.radslow) a.push(`Slows enemies ${pct(d.radslow.pct)} within ${tiles(d.radslow.r)} tiles${d.radslow.stack?' (adds on top of other slows)':''}`);
   if (d.spdAura) a.push(`Aura: +${pct(d.spdAura.pct)} attack speed to towers within ${tiles(d.spdAura.r)} tiles${d.spdAura.stack?' (adds on top of other opal auras)':' (highest speed aura applies)'}`);
   if (d.magic) a.push('Magic damage: ignores armor');
-  if (d.magicAmp) a.push(`Hits make enemies within ${d.splash ? d.splash.r : 0} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
+  if (d.magicAmp) a.push(`Hits make enemies within ${d.magicAmp.r} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
   if (d.dmgAura) a.push(`Aura: +${pct(d.dmgAura.pct)} damage to towers within ${tiles(d.dmgAura.r)} tiles`);
   if (d.rangeAura) a.push(`Aura: +${pct(d.rangeAura.pct)} attack range to towers within ${tiles(d.rangeAura.r)} tiles`);
   if (d.armorAura) a.push(`Aura: −${d.armorAura.amt} armor to ${d.armorAura.air&&d.armorAura.ground?'all enemies':d.armorAura.air?'flyers':'ground units'} within ${tiles(d.armorAura.r)} tiles`);
@@ -2807,7 +2810,7 @@ function renderWave(){
     <div class="kv">
       <div><span>HP</span><b>${fmt(w.hp)}</b></div>
       <div><span>Armor</span><b>${w.armor} <span class="chip" style="font-size:11px"><i style="background:${ARMOR[w.type]}"></i>${w.type}</span></b></div>
-      <div><span>Speed</span><b>${w.speed}</b></div>
+      <div><span>Speed</span><b>${w.speed}</b></div>${w.mr ? `<div><span>Magic resist</span><b>${pct(w.mr)}</b></div>` : ''}
       <div><span>Leak cost</span><b>${w.leak} ${w.leak===1?'life':'lives'}</b></div>
       <div><span>Bounty</span><b>${w.bounty} g</b></div>
       <div><span>Walk time</span><b>${w.fly?'—':mins+'s'}</b></div>
@@ -2961,7 +2964,7 @@ function renderBook(){
         let chain = '', k = R.to; while (DEFS[k].upg){ const u = DEFS[k].upg; chain += `<span class="up">→ ${port(u.to, true)}<span><b>${DEFS[u.to].name}</b><small>${u.cost} gold</small></span></span>`; k = u.to; }
         return card(R.to, d.rare ? 'Rare one-shot' : 'Special', [{label: d.rare ? 'One-shot' : 'Recipe', ...c}], chain ? `<div class="chain">${chain}</div>` : ''); }).join('') + '</div>';
   } else {
-    html = `<p class="hint">Each ultimate has two recipes: fuse a fully upgraded special with two Great gems, or place all five qualities (Chipped to Perfect) of one gem type in the same round as a one-shot. Ultimates deal chaos damage, which ignores armor type.</p><div class="tgrid">` +
+    html = `<p class="hint">Each ultimate has two recipes: fuse a fully upgraded special with two Great gems, or place all five qualities (Chipped to Perfect) of one gem type in the same round as a one-shot. Ultimates deal pure damage, which ignores armor and magic resistance.</p><div class="tgrid">` +
       [...new Set(RECIPES.filter(R=>R.group==='ultimate'||R.group==='secret').map(R=>R.to))].map(key => {
         const rows = RECIPES.filter(R=>R.to===key && (R.group==='ultimate'||R.group==='secret')).map(R => ({label: R.group==='secret' ? 'One-shot' : 'Fuse', ...chips(R.parts)}));
         return card(key, 'Ultimate', rows); }).join('') + '</div>';
