@@ -246,6 +246,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <div class="setrow" id="lookRow"><div><b>3D lighting</b><small>Night makes every glowing tower stand out.</small></div><div class="seg"><button data-look="day" id="lDay">Day</button><button data-look="night" id="lNight">Night</button></div></div>
       <div class="setrow" id="olRow"><div><b>Outlines</b><small>A dark painted edge round every tower.</small></div><div class="seg"><button data-ol="1" id="oOn">On</button><button data-ol="0" id="oOff">Off</button></div></div>
       <div class="setrow" id="camRow"><div><b>3D camera</b><small>Drag to pan, right-drag to rotate, scroll to zoom, arrow keys to move.</small></div><button id="camReset">Reset camera</button></div>
+      <div class="setrow"><div><b>Auto-upgrade</b><small>Spends gold for you as soon as you can afford it: tower upgrades and gem chance levels, cheapest first.</small></div><div class="seg"><button data-auto="1" id="aOn">On</button><button data-auto="0" id="aOff">Off</button></div></div>
       <div class="setrow"><div><b>Game speed</b><small>Hotkeys 1, 2 and 4.</small></div><div class="seg"><button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button></div></div>
       <div class="setrow"><div><b>Show path during waves</b><small>The path always shows while you build. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
       <div class="setrow keysrow"><div><b>Hotkeys</b><p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Towers · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> Speed · <kbd>Esc</kbd> Deselect</p></div></div>
@@ -3102,6 +3103,7 @@ function loop(now){
       if (S.phase==='lost'||S.phase==='victory') break; }
   }
   if (!view3d.on) frame();
+  autoUpgrade(dt);
   uiT += dt;
   if (!S){ if (ui.dirty){ renderPregame(); ui.dirty = false; } }
   else {
@@ -3194,7 +3196,19 @@ async function setView(on){
   try { localStorage.setItem('gemtd.view', view3d.on ? '3d' : '2d'); } catch(e){}
   renderSettings();
 }
+// auto-upgrade: buys what the player could buy by hand (and records it the same way), so replays still check out
+let autoOn = false, autoT = 0; try { autoOn = localStorage.getItem('gemtd.auto')==='1'; } catch(e){}
+function autoUpgrade(dt){
+  if (!autoOn || !S || S.paused || S.phase==='lost' || S.phase==='victory' || S.tainted==='replay') return;
+  autoT += dt; if (autoT < .25) return; autoT = 0;
+  const opts = [];
+  if (S.chance < 8) opts.push({cost:CHANCE_COST[S.chance], fn:buyChance});
+  for (const t of S.towers){ const d = DEFS[t.key]; if (!t.draft && d.upg) opts.push({cost:d.upg.cost, fn:() => upgradeTower(t)}); }
+  opts.sort((a,b) => a.cost - b.cost);
+  if (opts.length && S.gold >= opts[0].cost) opts[0].fn();
+}
 function renderSettings(){
+  $('aOn').classList.toggle('on', autoOn); $('aOff').classList.toggle('on', !autoOn);
   $('v2d').classList.toggle('on', !view3d.on); $('v3d').classList.toggle('on', view3d.on); $('v3d').textContent = view3d.loading ? 'Loading…' : '3D';
   $('qHigh').classList.toggle('on', view3d.q==='high'); $('qLow').classList.toggle('on', view3d.q==='low');
   $('qRow').hidden = $('camRow').hidden = $('lookRow').hidden = $('olRow').hidden = !view3d.on;
@@ -3208,6 +3222,7 @@ $('v2d').onclick = () => setView(false); $('v3d').onclick = () => setView(true);
 $('qHigh').onclick = $('qLow').onclick = ev => { view3d.q = ev.target.dataset.q; try { localStorage.setItem('gemtd.q3d', view3d.q); } catch(e){} if (view3d.on) view3d.mod.setQuality(view3d.q); renderSettings(); };
 $('lDay').onclick = $('lNight').onclick = ev => { view3d.look = ev.target.dataset.look; try { localStorage.setItem('gemtd.look', view3d.look); } catch(e){} if (view3d.mod) view3d.mod.setLook(view3d.look); renderSettings(); };
 $('oOn').onclick = $('oOff').onclick = ev => { view3d.ol = ev.target.dataset.ol==='1'; try { localStorage.setItem('gemtd.outline', view3d.ol ? '1' : '0'); } catch(e){} if (view3d.mod) view3d.mod.setOutline(view3d.ol); renderSettings(); };
+$('aOn').onclick = $('aOff').onclick = ev => { autoOn = ev.target.dataset.auto==='1'; try { localStorage.setItem('gemtd.auto', autoOn ? '1' : '0'); } catch(e){} toast(autoOn ? 'Auto-upgrade on' : 'Auto-upgrade off'); renderSettings(); };
 $('camReset').onclick = () => { if (view3d.mod) view3d.mod.resetView(); };
 $('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; renderSettings(); };
 let wantView = '3d'; try { wantView = localStorage.getItem('gemtd.view') || '3d'; } catch(e){}
