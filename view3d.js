@@ -331,9 +331,9 @@ function glowStone(stone, glow, amt=1){ const k = 'gs'+stone+glow+amt; if (fxCac
       gl_FragColor = vec4(col, 1.); }` }); }
 // additive light: ribbons that stream upward, flames and water jets
 function ribbonMat(hex){ const k = 'rb'+hex; if (fxCache[k]) return fxCache[k];
-  return fxCache[k] = new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, uniforms:{time:crysU.time, c:{value:C(hex)}}, vertexShader:VERT_UV,
+  return fxCache[k] = Object.assign(new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, uniforms:{time:crysU.time, c:{value:C(hex)}}, vertexShader:VERT_UV,
     fragmentShader:`uniform vec3 c; uniform float time; varying vec2 vUv;
-    void main(){ float a = smoothstep(0., .2, vUv.x)*smoothstep(1., .55, vUv.x); a *= .55 + .45*sin(vUv.x*24. - time*5.); gl_FragColor = vec4(c*a*1.6, a); }` }); }
+    void main(){ float a = smoothstep(0., .2, vUv.x)*smoothstep(1., .55, vUv.x); a *= .55 + .45*sin(vUv.x*24. - time*5.); gl_FragColor = vec4(c*a*1.6, a); }` }), {isRibbon:true}); }
 function flameMat(core, outer, seed=0){ const k = 'fl'+core+outer+seed; if (fxCache[k]) return fxCache[k];
   return fxCache[k] = new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, uniforms:{time:crysU.time, c1:{value:C(core)}, c2:{value:C(outer)}, seed:{value:seed}}, vertexShader:VERT_UV,
     fragmentShader:`uniform vec3 c1, c2; uniform float time, seed; varying vec2 vUv; ${NOISE}
@@ -635,7 +635,7 @@ const NEWFORMS = {
     const k = t===1 ? 1 : 1.3, parts = [xf(obelisk(.1*k, .5*k, 510, false), {y:.06})];
     for (let i=0;i<(t===1 ? 4 : 6);i++){ const a = i/(t===1 ? 4 : 6)*Math.PI*2 + .4, o = obelisk(.06*k, .3*k, 520+i, false); xf(o, {rz:-.5, x:.06}); xf(o, {ry:-a, y:.06}); parts.push(o); }
     g.add(new THREE.Mesh(mergeGeometries(parts), red)); g.add(at(starSprite('#ffe0c0', .35, .7), 0, .3*k, .08));
-    if (t===2){ const sh = new THREE.Group(); sh.position.y = .55; g.add(sh); for (let i=0;i<6;i++){ const a = i/6*Math.PI*2, s = mesh(withH(new THREE.OctahedronGeometry(.025, 0).toNonIndexed()), red, Math.cos(a)*.3, (i%2)*.12, Math.sin(a)*.3); s.scale.y = 1.6; sh.add(s); } anims.push({o:sh, kind:'spin', speed:.5}); }
+    if (t===2){ const sh = new THREE.Group(); sh.position.y = .55; ; for (let i=0;i<6;i++){ const a = i/6*Math.PI*2, s = mesh(withH(new THREE.OctahedronGeometry(.025, 0).toNonIndexed()), red, Math.cos(a)*.3, (i%2)*.12, Math.sin(a)*.3); s.scale.y = 1.6; sh.add(s); } anims.push({o:sh, kind:'spin', speed:.5}); }
     for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + .3, b = new THREE.Mesh(lightningGeo(new THREE.Vector3(Math.cos(a)*.42, .02, Math.sin(a)*.42), new THREE.Vector3(Math.cos(a+.5)*.3, .32, Math.sin(a+.5)*.3), 540+i, .1, 7), ribbonMat('#8ad8ff')); g.add(b); anims.push({o:b, kind:'flicker', phase:i}); }
     g.add(pool(C('#ff2a40'), .95, .3)); return {g, top:.4*k, anims}; },
   // Koh-i-Noor: a tiered tower of dark stone ribbed with blue light, a white-blue crystal burning at its crown, violet lightning coiling round
@@ -699,7 +699,7 @@ const NEWFORMS2 = {
     if (t>=2){ // molten streams running down the sides
       for (let i=0;i<(t===2 ? 3 : 5);i++){ const a = i/(t===2 ? 3 : 5)*Math.PI*2 + .3, st = mesh(new THREE.BoxGeometry(.03, cy*.9, .02), new THREE.MeshBasicMaterial({color:new THREE.Color(1.8, .5, .1)}), Math.cos(a)*(cr + .1), cy*.45, Math.sin(a)*(cr + .1));
         st.lookAt(0, st.position.y, 0); st.rotateX(-.38); g.add(st); } }
-    if (t===3){ const sh = new THREE.Group(); sh.position.y = cy + .3; g.add(sh);
+    if (t===3){ const sh = new THREE.Group(); sh.position.y = cy + .3; ;
       for (let i=0;i<5;i++){ const a = i/5*Math.PI*2, b = mesh(roughBlock(.05, .05, .04, 380+i, .3), rock, Math.cos(a)*.3, (i%2)*.1, Math.sin(a)*.3); sh.add(b); }
       anims.push({o:sh, kind:'spin', speed:.5}); }
     g.add(at(glowSprite(C('#ff5a20'), .5 + t*.25, .25), 0, cy + .1, 0));
@@ -763,7 +763,7 @@ NEWFORMS2.obsidian = function(){
   const vein = new THREE.Mesh(lightningGeo(new THREE.Vector3(0, .12, .11), new THREE.Vector3(.01, .85, .07), 890, .04, 10), new THREE.MeshBasicMaterial({color:new THREE.Color(.4, 1.8, 2.2)})); g.add(vein);
   g.add(at(glowSprite(C('#3ae0ff'), .7, .3), 0, .2, 0));
   // splinters of glass drifting round it
-  const drift = new THREE.Group(); drift.position.y = .55; g.add(drift);
+  const drift = new THREE.Group(); drift.position.y = .55; ;
   for (let i=0;i<7;i++){ const a = i/7*Math.PI*2, s = mesh(withH(new THREE.OctahedronGeometry(.025, 0).toNonIndexed()), black, Math.cos(a)*.36, (i%3)*.15 - .1, Math.sin(a)*.36); s.scale.y = 2; drift.add(s); }
   anims.push({o:drift, kind:'spin', speed:.4});
   // cyan arcs crackling out from the crystal
@@ -776,7 +776,7 @@ function buildForm(key, d){ const fam = famOf(key), t = (key.match(/(\d)$/) || [
 
 function lightningGeo(a, b, seed, jag=.12, n=8){ const R = mkRng(seed), pts = [];
   for (let i=0;i<=n;i++){ const t = i/n, p = a.clone().lerp(b, t); if (i && i<n) p.add(new THREE.Vector3((R()-.5)*jag, (R()-.5)*jag*.6, (R()-.5)*jag)); pts.push(p); }
-  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0), 32, .008, 4, false); }
+  const tg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0), 32, .008, 4, false); tg.userData.bolt = true; return tg; }
 // a dark jewel whose every facet is a different deep colour, lit from inside and edged in light
 function facetMat(){ return fxCache.facet || (fxCache.facet = new THREE.ShaderMaterial({ uniforms:{time:crysU.time}, vertexShader:`attribute vec3 fcol; attribute float aH; varying vec3 vC; varying float vH; varying vec3 vW; varying vec3 vL;
     void main(){ vC = fcol; vH = aH; vL = position; vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
@@ -828,46 +828,37 @@ function heartGem(r, h){
     for (let j=0;j<3;j++){ fc[i*9+j*3] = c.r; fc[i*9+j*3+1] = c.g; fc[i*9+j*3+2] = c.b; } }
   geo.setAttribute('fcol', new THREE.BufferAttribute(fc, 3)); return geo; }
 function buildGreat(){
-  // The Great Stone: a great bloom of glowing crystals bursting from a lotus of black rock
+  // The Great Stone: a burst of prismatic crystals rising from a cup of black rock, set on a round stone dais
+  // ringed in gold, cyan and violet light, with shards of every colour drifting round it
   const g = new THREE.Group(), anims = [];
-  // light spilling onto the ground beneath
-  const shade = new THREE.Mesh(new THREE.CircleGeometry(.85, 40), new THREE.MeshBasicMaterial({map:glowTex, color:0x000000, transparent:true, opacity:.75, depthWrite:false})); shade.rotation.x = -Math.PI/2; shade.position.y = .008; g.add(shade);
-  g.add(pool(C('#7a2aff'), 1.3, .3)); g.add(pool(C('#ff3a6a'), .6, .2));
-  const rnd = mkRng(66);
-  // the black rock lotus: three rows of faceted stone petals, each row higher, tighter and more upright
-  const rock = [];
-  [[14, .3, .9, .16, .12], [11, .22, .6, .15, .13], [8, .14, .35, .13, .14]].forEach(([n, r, tilt, w, h], l) => {
-    for (let i=0;i<n;i++){ const a = (i + l*.37)/n*Math.PI*2, b = roughBlock(w, h + (i%3)*.02, w*.75, 1600 + l*40 + i, .28); xf(b, {rz:-tilt}); xf(b, {x:r, y:l*.05}); xf(b, {ry:-a}); rock.push(b); } });
-  g.add(mesh(mergeGeometries(rock), glowStone('#08070a', '#b03aff', .7)));
-  // the bloom
-  const AMBER = ['#1a0800','#c85a08','#ffd080'], GOLD = ['#140c00','#c08a10','#ffe8a0'], CYAN = ['#000e14','#1a9ac0','#a8f0ff'], VIO = ['#06001a','#4a18c0','#c8a8ff'], BLUE = ['#000820','#1a38c0','#a8c0ff'],
-        PINK = ['#18000e','#c01a78','#ffa8d8'], PEACH = ['#1a0600','#c0401a','#ffc0a0'], BLOOD = ['#120002','#a0081e','#ff8a8a'];
-  const parts = [], add = (mat, len, w, r, tilt, a, seed) => { const o = obelisk(len*w, len, seed, false); xf(o, {rz:-(tilt + (rnd()-.5)*.35), rx:(rnd()-.5)*.3}); xf(o, {x:r}); xf(o, {ry:-(a + (rnd()-.5)*.3)}); parts.push({o, mat}); };
-  // core: a tall amber spire with golds about it, cyan spires rising behind
-  add(['#0a0418','#9a6aff','#ffffff','RAIN'], 1.2, .18, 0, 0, 0, 1700); add(['#0a0418','#ff7ab0','#fff0f8','RAIN'], .78, .15, .07, .16, Math.PI*.15, 1701); add(['#0a0418','#5ae0ff','#ffffff','RAIN'], .74, .15, .07, .16, Math.PI*.85, 1702); add(['#0a0418','#ffc040','#fffbe8','RAIN'], .66, .14, .07, .18, -Math.PI*.5, 1703);
-  add(CYAN, .82, .13, .17, .26, -Math.PI*.68, 1704); add(CYAN, .8, .13, .17, .26, -Math.PI*.32, 1705); add(CYAN, .58, .12, .24, .45, -Math.PI*.88, 1706); add(CYAN, .56, .12, .24, .45, -Math.PI*.12, 1707);
-  // middle ring: violet and deep blue, angled outward
-  for (let i=0;i<14;i++){ const a = i/14*Math.PI*2 + .1; add(i%3===1 ? BLUE : VIO, .44 + (i%3)*.07, .15, .15, .78 + (i%2)*.1, a, 1710+i); }
-  // outer ring: long crystals splayed wide, warm amber, peach and pink with a few violets
-  for (let i=0;i<20;i++){ const a = i/20*Math.PI*2; add([AMBER, BLOOD, PINK, VIO, PEACH, BLOOD, GOLD][i%7], .42 + (i%3)*.07, .14, .24, 1.15 + (i%2)*.12, a, 1740+i); }
+  // stone dais of fitted slabs
+  const slabs = []; for (let ring=0; ring<2; ring++){ const n = ring ? 16 : 9, r = ring ? .44 : .25; for (let i=0;i<n;i++){ const a = (i + ring*.5)/n*Math.PI*2; slabs.push(xf(roughBlock(ring ? .17 : .17, .07, ring ? .14 : .15, 2100 + ring*20 + i, .05), {x:Math.cos(a)*r, z:Math.sin(a)*r, ry:-a})); } }
+  g.add(mesh(mergeGeometries(slabs), glowStone('#3a3640', '#ffd27a', .35)));
+  for (const [r, col, sp] of [[.54, '#ffd27a', .15], [.47, '#5ae8ff', -.22], [.4, '#b07cff', .3]]){ const ring = runeCircle(r, col, 'ring', .7); ring.position.y = .075; g.add(ring); anims.push({o:ring, kind:'spin', speed:sp, axis:'z'}); }
+  // cup of black rock
+  const cup = []; for (let i=0;i<11;i++){ const a = i/11*Math.PI*2, b = roughBlock(.12, .14 + (i%3)*.03, .09, 2150+i, .25); xf(b, {rz:-.55, x:.15}); xf(b, {ry:-a}); cup.push(b); }
+  g.add(mesh(mergeGeometries(cup), glowStone('#0c0a12', '#c07cff', .55), 0, .06, 0));
+  // the burst: prismatic centre, cyan and violet spires, amber and pink fanning out
+  const PRISM = ['#0c0820','#9a7aff','#ffe8ff','R'], CY = ['#022a3a','#3ae0ff','#effeff'], VI = ['#120632','#8a4aff','#f0e4ff'], AM = ['#3a1a00','#ffaa20','#fff4c8'], PK = ['#3a0830','#ff5ac0','#ffe4f6'], GN = ['#022a14','#3aff9a','#eaffee'];
+  const rnd = mkRng(2200), parts = [], add = (mat, len, w, r, tilt, a, seed) => { const o = obelisk(len*w, len, seed, false); xf(o, {rz:-(tilt + (rnd()-.5)*.15)}); xf(o, {x:r}); xf(o, {ry:-a}); parts.push({o, mat}); };
+  add(PRISM, 1.05, .2, 0, 0, 0, 2201); add(['#1a0c00','#ff9a30','#fff0c0','R'], .72, .18, .08, .18, .4, 2202); add(['#021a2a','#3ab8ff','#e8f8ff','R'], .7, .18, .08, .18, Math.PI + .4, 2203);
+  add(CY, .66, .15, .14, .3, Math.PI*.6, 2204); add(CY, .62, .15, .14, .3, -Math.PI*.4, 2205); add(VI, .58, .15, .14, .32, Math.PI*.1, 2206); add(VI, .56, .15, .14, .32, Math.PI*1.1, 2207);
+  for (let i=0;i<12;i++){ const a = i/12*Math.PI*2 + .2; add([AM, PK, VI, CY, GN, AM][i%6], .4 + (i%3)*.06, .15, .18, .85 + (i%2)*.15, a, 2210+i); }
   const byMat = new Map(); for (const {o, mat} of parts){ const k = mat.join(); if (!byMat.has(k)) byMat.set(k, {mat, geos:[]}); byMat.get(k).geos.push(o); }
-  const bloom = new THREE.Group(); bloom.position.y = .16; g.add(bloom);
-  for (const {mat, geos} of byMat.values()) bloom.add(new THREE.Mesh(mergeGeometries(geos), crysMat(mat[0], mat[1], mat[2], mat[3] ? {glow:1.1, rainbow:1} : {glow:.9})));
-  // small pale crystals glowing at the foot
-  const foot = []; for (let i=0;i<22;i++){ const a = i*2.4, r = .4 + (i%4)*.035, o = obelisk(.016, .05 + (i%3)*.025, 1800+i, false); xf(o, {rz:-.5}); xf(o, {ry:-a, x:Math.cos(a)*r, z:Math.sin(a)*r}); foot.push(o); }
-  g.add(mesh(mergeGeometries(foot), crysMat('#0a0018', '#7a3aff', '#d8b8ff', {glow:1.2}), 0, .01, 0));
-  // warm light at the heart of the bloom
-  g.add(at(glowSprite(C('#c890ff'), .7, .3), 0, .45, 0));
-  // dark smoke curling round it, violet lightning crackling out of the bloom
-  const smokeTex = canvasTex(128, 128, (c, w) => { const gr = c.createRadialGradient(w/2,w/2,0,w/2,w/2,w/2); gr.addColorStop(0,'rgba(10,0,20,.9)'); gr.addColorStop(.6,'rgba(20,0,40,.5)'); gr.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle = gr; c.fillRect(0,0,w,w); });
-  const smoke = new THREE.Group(); g.add(smoke);
-  for (let i=0;i<9;i++){ const a = i/9*Math.PI*2, sp = new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex, transparent:true, depthWrite:false, opacity:.55})); sp.position.set(Math.cos(a)*.42, .15 + (i%3)*.18, Math.sin(a)*.42); sp.scale.setScalar(.45 + (i%3)*.12); smoke.add(sp); }
-  anims.push({o:smoke, kind:'spin', speed:-.35});
-  for (let i=0;i<5;i++){ const a = i/5*Math.PI*2 + .3, from = new THREE.Vector3(Math.cos(a)*.08, .5, Math.sin(a)*.08), to = new THREE.Vector3(Math.cos(a)*.55, .85 + (i%2)*.3, Math.sin(a)*.55);
-    const b = new THREE.Mesh(lightningGeo(from, to, 1900+i, .16, 8), ribbonMat(i%2 ? '#c08aff' : '#ff5aa0')); g.add(b); anims.push({o:b, kind:'flicker', phase:i*1.3}); }
-  const sky = new THREE.Mesh(lightningGeo(new THREE.Vector3(0, 1.3, 0), new THREE.Vector3(.05, 2.1, 0), 1950, .14, 7), ribbonMat('#e0c8ff')); g.add(sky); anims.push({o:sky, kind:'flicker', phase:7});
-  g.scale.setScalar(1.2);
-  return {g, top:.95, sparkle:true, anims}; }
+  const burst = new THREE.Group(); burst.position.y = .14; g.add(burst);
+  for (const {mat, geos} of byMat.values()) burst.add(new THREE.Mesh(mergeGeometries(geos), crysMat(mat[0], mat[1], mat[2], mat[3] ? {glow:1.15, rainbow:1} : {glow:1.15})));
+  burst.add(at(starSprite('#ffffff', .3, .5), .04, .95, .1));
+  g.add(at(glowSprite(C('#c8a0ff'), 1.1, .16), 0, .5, 0));
+  // shards of every colour drifting round it
+  const drift = new THREE.Group(); drift.position.y = .55; ;
+  ['#3ae0ff','#ffaa20','#ff5ac0','#8a4aff','#3aff9a','#ffe040','#5a8aff','#ff4a4a'].forEach((c, i) => { const a = i/8*Math.PI*2, cc = C(c);
+    const s = mesh(withH(new THREE.OctahedronGeometry(.035, 0).toNonIndexed()), crysMat('#'+cc.clone().multiplyScalar(.15).getHexString(), c, '#ffffff', {glow:1.2}), Math.cos(a)*.52, Math.sin(a*2)*.18, Math.sin(a)*.52); s.scale.y = 1.7; drift.add(s); });
+  anims.push({o:drift, kind:'spin', speed:.35});
+  // golden arcs crackling out of the burst
+  for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + .3, b = new THREE.Mesh(lightningGeo(new THREE.Vector3(Math.cos(a)*.1, .55, Math.sin(a)*.1), new THREE.Vector3(Math.cos(a)*.6, .8 + (i%2)*.25, Math.sin(a)*.6), 2250+i, .14, 8), ribbonMat('#ffd27a')); g.add(b); anims.push({o:b, kind:'flicker', phase:i*1.3}); }
+  g.add(pool(C('#d0a8ff'), 1.4, .3));
+  g.scale.setScalar(1.18);
+  return {g, top:1.05, sparkle:true, anims}; }
 function buildAgate(){
   const g = new THREE.Group(), col = new THREE.Color('#5fd3a8');
   let y = 0; const tier = (rt, rb, h, mat, n=24) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, n), mat); m.position.y = y + h/2; g.add(m); y += h; };
@@ -931,10 +922,25 @@ function proto(key){
     else if (d.kind==='special') p = buildSpecial(key, d);
     else p = buildDesign(key, d);
   } catch(err){ console.error('3D model failed for', key, err); p = buildRock(3); }
+  tame(key, p);
   p.g.traverse(o => { if (o.isMesh && !(o.material.blending === THREE.AdditiveBlending) && !o.material.transparent){ o.castShadow = true; o.receiveShadow = true; } });
   if (DEFS[key] && DEFS[key].kind==='special'){ const solid = []; p.g.traverse(o => { if (o.isMesh && o.geometry.attributes.normal && !o.material.transparent && o.material.blending !== THREE.AdditiveBlending && !(o.material.uniforms && o.material.uniforms.cDeep) && !(o.geometry.type || '').startsWith('Plane') && !(o.geometry.type || '').startsWith('Circle')) solid.push(o); });
     for (const o of solid){ const ol = new THREE.Mesh(o.geometry, OUTLINE); ol.renderOrder = -1; ol.castShadow = false; ol.userData.outline = true; o.add(ol); } }
   protos.set(key, p); return p; }
+// effects are saved for the ultimates: no lightning on the Great Stone or Obsidian, and these specials lose their
+// shine, halos and swirling auras; anything removed takes its animation with it
+const NO_BOLTS = {bryvx:1, obsidian:1}, QUIET = {darkemerald1:1, darkemerald2:1, gold1:1, gold2:1, silver1:1, silver2:1, uranium1:1, uranium2:1, blackopal1:1, blackopal2:1, paraiba1:1, paraiba2:1};
+function tame(key, p){
+  const quiet = !!QUIET[key], drop = [];
+  p.g.traverse(o => {
+    if (NO_BOLTS[key] && o.isMesh && o.geometry.userData.bolt) drop.push(o);
+    if (quiet && (o.isSprite || (o.isMesh && o.material.isRibbon && !o.geometry.userData.bolt))) drop.push(o);
+    if (quiet && o.isMesh && o.material.map === glowTex) o.material = Object.assign(o.material.clone(), {opacity:o.material.opacity*.5});
+  });
+  for (const o of drop) if (o.parent) o.parent.remove(o);
+  if (key==='silver2') p.anims = [];
+  if (p.anims){ const live = new Set(); p.g.traverse(o => live.add(o)); p.anims = p.anims.filter(a => live.has(a.o)); }
+  if (quiet || key==='silver2') p.sparkle = false; }
 function instance(key){ const p = proto(key), g = p.g.clone(true);
   const inst = {g, top:p.top, embers:p.embers, sparkle:p.sparkle, anim:null, anims:[]};
   if (p.anims && p.anims.length){ const idx = new Map(); let i = 0; p.g.traverse(o => idx.set(o, i++)); const list = []; g.traverse(o => list.push(o));
