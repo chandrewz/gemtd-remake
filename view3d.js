@@ -1013,10 +1013,10 @@ function buildWorld(){
   // checkpoints
   { const shape = new THREE.Shape(); shape.moveTo(.32,0); shape.lineTo(-.18,.28); shape.lineTo(-.08,0); shape.lineTo(-.18,-.28); shape.closePath();
     const aGeo = new THREE.ExtrudeGeometry(shape, {depth:.06, bevelEnabled:true, bevelThickness:.02, bevelSize:.02, bevelSegments:2});
-    const aMat = new THREE.MeshStandardMaterial({envMap:envTex, color:0x9a7a30, metalness:.8, roughness:.35, emissive:0x8a5a10, emissiveIntensity:.25});
+    const aMat = new THREE.MeshStandardMaterial({envMap:envTex, color:0xf2c840, metalness:.6, roughness:.35, emissive:0xb88a10, emissiveIntensity:.35});
     const ROT = {R:0, U:Math.PI/2, L:Math.PI, D:-Math.PI/2};
     CPS.forEach((c, i) => { const g = new THREE.Group(); g.position.set(wx(c.x), 0, wz(c.y)); scene.add(g);
-      const pad = new THREE.Mesh(new THREE.CylinderGeometry(.46,.5,.08,32), M.bronze); pad.position.y = .04; pad.receiveShadow = true; g.add(pad);
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(.46,.5,.08,32), M.gold); pad.position.y = .04; pad.receiveShadow = true; g.add(pad);
       const num = canvasTex(128, 128, (x) => { x.fillStyle = '#2a2110'; x.beginPath(); x.arc(64,64,62,0,7); x.fill(); x.fillStyle = '#f7d77e'; x.font = '600 74px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(i+1), 64, 68); });
       const face = new THREE.Mesh(new THREE.CircleGeometry(.38, 32), new THREE.MeshStandardMaterial({map:num, roughness:.5, metalness:.3})); face.rotation.x = -Math.PI/2; face.rotation.z = ROT[c.dir] - Math.PI/2; face.position.y = .081; g.add(face);
       const arrow = new THREE.Mesh(aGeo, aMat); arrow.rotation.x = -Math.PI/2; arrow.castShadow = true;
@@ -1129,7 +1129,7 @@ function makeCreep(e){
 const towerObjs = new Map(), creepObjs = new Map(), projObjs = new Map(), seenFx = new WeakSet(), floaters = [];
 let lastS = null, shotGeo;
 function clearDynamic(){
-  for (const o of towerObjs.values()) scene.remove(o.g); towerObjs.clear();
+  for (const o of towerObjs.values()){ scene.remove(o.g); for (const k of ['frame','glint','burnRing']) if (o[k]) scene.remove(o[k]); } towerObjs.clear();
   for (const o of creepObjs.values()) scene.remove(o.g, o.bar); creepObjs.clear();
   for (const o of projObjs.values()) scene.remove(o.m); projObjs.clear();
   parts.length = 0; for (const f of floaters) f.el.remove(); floaters.length = 0; }
@@ -1148,6 +1148,12 @@ function syncTowers(T, dt){
     if (glint && !o.glint){ o.glint = glowSprite(0xfff2c0, .1, .9); scene.add(o.glint); }
     if (o.glint){ o.glint.visible = !!glint; if (glint){ const u = ((T*.45 + t.id*.17) % 1 + 1) % 1, d = u*4, k2 = Math.floor(d), f = d - k2, h = .47;
       const [gx, gz] = k2===0 ? [-h + 2*h*f, -h] : k2===1 ? [h, -h + 2*h*f] : k2===2 ? [h - 2*h*f, h] : [-h, h - 2*h*f]; o.glint.position.set(wx(t.x)+gx, .03, wz(t.y)+gz); } }
+    // burn towers scorch the ground they reach while a wave is on
+    const bd = DEFS[t.key] && DEFS[t.key].burn;
+    if (bd && !o.burnRing){ const col = new THREE.Color(DEFS[t.key].color || '#ff6a20').lerp(new THREE.Color('#ff7a1a'), .5);
+      o.burnRing = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({map:glowTex, color:col, transparent:true, opacity:.22, blending:THREE.AdditiveBlending, depthWrite:false}));
+      o.burnRing.rotation.x = -Math.PI/2; o.burnRing.position.set(wx(t.x), .03, wz(t.y)); scene.add(o.burnRing); }
+    if (o.burnRing){ const on = !!bd && G.state().phase === 'wave'; o.burnRing.visible = on; if (on){ o.burnRing.scale.setScalar(G.U(bd.r)*1.15); o.burnRing.material.opacity = .2 + Math.sin(T*4 + t.id)*.05; } }
     // idle animation
     for (const a of o.anims){ if (a.kind==='spin') a.o.rotation[a.axis||'y'] += a.speed*dt; else if (a.kind==='bob') a.o.position.y = a.y0 + Math.sin(T*(a.speed||1.5) + t.id)*(a.amp||.04);
       else if (a.kind==='flicker'){ const k = Math.floor(T*9 + a.phase*3.7); a.o.visible = Math.sin(k*12.9898 + a.phase*78.233 + t.id)*43758.5 % 1 > -.35; } }
@@ -1156,7 +1162,7 @@ function syncTowers(T, dt){
     if (o.embers && Math.random() < .2) emit(tmp.set(wx(t.x)+(Math.random()-.5)*.25, .7, wz(t.y)+(Math.random()-.5)*.25), new THREE.Color(1,.45+Math.random()*.3,.1), 1, .3, 1.1, .1, 3);
     if (o.sparkle && Math.random() < .08) emit(tmp.set(wx(t.x)+(Math.random()-.5)*.6, .4, wz(t.y)+(Math.random()-.5)*.6), new THREE.Color().setHSL(Math.random(), .8, .7), 1, .12, 1.6, .1, 6);
   }
-  for (const [id, o] of towerObjs) if (!seen.has(id)){ scene.remove(o.g); if (o.frame) scene.remove(o.frame); if (o.glint) scene.remove(o.glint); towerObjs.delete(id); } }
+  for (const [id, o] of towerObjs) if (!seen.has(id)){ scene.remove(o.g); if (o.frame) scene.remove(o.frame); if (o.glint) scene.remove(o.glint); if (o.burnRing) scene.remove(o.burnRing); towerObjs.delete(id); } }
 function syncCreeps(T, dt){
   const S = G.state(), seen = new Set();
   for (const e of S.enemies){ if (e.dead) continue; seen.add(e.id); let o = creepObjs.get(e.id); if (!o){ o = makeCreep(e); creepObjs.set(e.id, o); }
@@ -1166,6 +1172,7 @@ function syncCreeps(T, dt){
     if (e.fly) o.legs.forEach((w,i) => w.rotation.x = Math.sin(o.phase*1.4)*.6*(i?1:-1)); else o.legs.forEach((l,i) => l.rotation.x = Math.sin(o.phase + (i%2)*Math.PI)*.6);
     o.mat.emissiveIntensity = e.hitT > 0 ? .6 : 0;
     o.mat.emissive.set(e.frost && e.frost.t > 0 ? 0x8fd3ff : e.poison && e.poison.t > 0 ? 0x4fe08a : 0xffffff); if ((e.frost && e.frost.t > 0) || (e.poison && e.poison.t > 0)) o.mat.emissiveIntensity = Math.max(o.mat.emissiveIntensity, .35);
+    if (e.burnT > 0){ o.mat.emissive.set(0xff5a10); o.mat.emissiveIntensity = .55 + Math.sin(T*18 + e.id)*.15; }
     o.bar.position.set(x - .31*o.size, y + (e.fly ? .45 : .75)*o.size, z); o.bar.quaternion.copy(camera.quaternion);
     const f = Math.max(0, e.hp / e.max); o.fg.scale.x = .58*o.size*f; o.fg.material.color.set(f > .5 ? 0x5fd38d : f > .25 ? 0xf2c35b : 0xff5d73); }
   for (const [id, o] of creepObjs) if (!seen.has(id)){ scene.remove(o.g, o.bar); o.mat.dispose(); creepObjs.delete(id); } }
@@ -1222,7 +1229,7 @@ function tick(){
   if (cx !== controls.target.x || cz !== controls.target.z){ camera.position.x += cx - controls.target.x; camera.position.z += cz - controls.target.z; controls.target.x = cx; controls.target.z = cz; }
   const S = G.state();
   if (S !== lastS){ clearDynamic(); lastS = S; }
-  arrows.forEach(a => a.arrow.position.y = .55 + Math.sin(T*2 + a.phase)*.08);
+  
   portal.userData.vortex.rotation.z -= dt*1.8; portal.userData.rune.rotation.z += dt*.25;
   if (Math.random() < dt*30) emit(tmp.set(portal.position.x + (Math.random()-.5)*2, .1, portal.position.z + (Math.random()-.5)*2), new THREE.Color('#7ae0ff'), 1, .15, 1.6, .12, 6);
   { const p = castleFlag.geometry.attributes.position; for (let i=0;i<p.count;i++){ const x = p.getX(i) + .225; p.setZ(i, Math.sin(T*5 + x*9)*.05*x*2); } p.needsUpdate = true; }
@@ -1248,8 +1255,8 @@ function tick(){
     const sel = S.sel && S.towers.includes(S.sel) ? S.sel : null;
     selFrame.visible = !!sel; rangeRing.visible = false; auraRings.forEach(r => r.visible = false);
     if (sel){ selFrame.position.set(wx(sel.x), .008, wz(sel.y)); const d = DEFS[sel.key];
-      if (sel.key !== 'rock' && d.dmg){ rangeRing.visible = true; rangeRing.position.set(wx(sel.x), .02, wz(sel.y)); rangeRing.scale.setScalar(G.U(d.range)); rangeRing.children.forEach(m => m.material.color.set(d.color)); }
-      const auras = sel.key === 'rock' ? [] : [d.burn, d.radslow, d.spdAura, d.dmgAura, d.armorAura].filter(Boolean);
+      if (sel.key !== 'rock' && d.dmg){ rangeRing.visible = true; rangeRing.position.set(wx(sel.x), .02, wz(sel.y)); rangeRing.scale.setScalar(G.U(d.range)*(1 + (sel.bRange||0))); rangeRing.children.forEach(m => m.material.color.set(d.color)); }
+      const auras = sel.key === 'rock' ? [] : [d.burn, d.radslow, d.spdAura, d.dmgAura, d.armorAura, d.rangeAura].filter(Boolean);
       auras.forEach((a, i) => { let r = auraRings[i]; if (!r){ r = new THREE.Mesh(new THREE.RingGeometry(.98, 1, 128), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.6, depthWrite:false, side:THREE.DoubleSide})); r.rotation.x = -Math.PI/2; scene.add(r); auraRings[i] = r; }
         r.visible = true; r.position.set(wx(sel.x), .025 + i*.002, wz(sel.y)); r.scale.setScalar(G.U(a.r)); r.material.color.set(d.color); }); }
   } else if (lastS === null && towerObjs.size) clearDynamic();
