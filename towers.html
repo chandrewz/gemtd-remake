@@ -129,8 +129,8 @@ sp('darkemerald1',{name:'Dark Emerald', tier:1, dtype:'E', color:'#118a55', rang
 sp('darkemerald2',{name:'Enchanted Emerald', tier:2, dtype:'E', color:'#16b06c', range:700, cd:.7, dmg:98, dice:51, nd:2, crit:{c:.15,m:4}, stun:{c:.15,dur:2}});
 sp('gold1',    {name:'Gold', tier:1, dtype:'A', color:'#ffcf4a', range:800, cd:1, dmg:159, dice:31, crit:{c:.25,m:2}, shred:{amt:5,dur:5}, upg:{to:'gold2',cost:240}});
 sp('gold2',    {name:'Egyptian Gold', tier:2, dtype:'A', color:'#ffdc73', range:800, cd:.75, dmg:174, dice:41, crit:{c:.3,m:2}, shred:{amt:9,dur:5}});
-sp('uranium1', {name:'Uranium 238', tier:1, dtype:'T', color:'#9dff4a', dmg:0, range:200, burn:{dps:190,r:200}, radslow:{pct:.5,r:200}, upg:{to:'uranium2',cost:240}});
-sp('uranium2', {name:'Uranium 235', tier:2, dtype:'T', color:'#c2ff5c', dmg:0, range:275, burn:{dps:300,r:275}, radslow:{pct:.5,r:275}});
+sp('uranium1', {name:'Uranium 238', tier:1, dtype:'T', color:'#9dff4a', dmg:0, range:200, burn:{dps:190,r:200}, upg:{to:'uranium2',cost:240}});
+sp('uranium2', {name:'Uranium 235', tier:2, dtype:'T', color:'#c2ff5c', dmg:0, range:275, burn:{dps:300,r:275}});
 sp('pinkdiamond1',{name:'Pink Diamond', tier:1, dtype:'D', color:'#ff9ad5', range:800, cd:.75, dmg:149, dice:26, air:false, crit:{c:.1,m:5}, upg:{to:'pinkdiamond2',cost:240}});
 sp('pinkdiamond2',{name:'Great Pink Diamond', tier:2, dtype:'D', color:'#ffb8e3', range:850, cd:.6, dmg:204, dice:51, air:false, crit:{c:.1,m:8}});
 sp('paraiba1', {name:'Paraiba Tourmaline', tier:1, dtype:'Q', color:'#33e0ff', range:850, cd:.75, dmg:5, dice:79, nd:5, armorAura:{amt:4,r:600,ground:true}, nova:{c:.2,dmg:200,r:2}, upg:{to:'paraiba2',cost:350}});
@@ -156,7 +156,7 @@ sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
 sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
-sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.3,dur:3}});
+sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.3,dur:3}, magicAmp:{pct:.25,dur:4}});
 
 // one fixed damage value per hit: the average of the old dice roll (crits stay random)
 for (const d of Object.values(DEFS)) if (d.dmg) d.hit = Math.round(d.dmg + d.nd*(d.dice+1)/2);
@@ -1720,14 +1720,15 @@ function abilities(d){
   if (d.multi) a.push(d.multi>=99 ? 'Hits every enemy in range' : `Hits ${d.multi} targets per attack`);
   if (d.splash) a.push(d.splash.pct ? `Splash ${pct(d.splash.pct)} damage within ${d.splash.r} tiles${d.splash.frost?', splash slows':''}` : `Hits slow every enemy within ${d.splash.r} tiles`);
   if (d.frost) a.push(`Slows ${pct(d.frost.pct)} for ${d.frost.dur}s`);
-  if (d.poison) a.push(`Poison ${d.poison.dps}/s and ${pct(d.poison.pct)} slow for ${d.poison.dur}s`);
+  if (d.poison) a.push(`Poison ${d.poison.dps}/s (magic) and ${pct(d.poison.pct)} slow for ${d.poison.dur}s`);
   if (d.crit) a.push(`${pct(d.crit.c)} chance to deal ×${d.crit.m} damage`);
   if (d.stun) a.push(`${(d.stun.c*100).toFixed(1).replace('.0','')}% chance to stun for ${d.stun.dur}s`);
   if (d.shred) a.push(`Hits reduce armor by ${d.shred.amt} for ${d.shred.dur}s`);
-  if (d.burn) a.push(`Burns enemies for ${d.burn.dps}/s within ${tiles(d.burn.r)} tiles`);
+  if (d.burn) a.push(`Burns enemies for ${d.burn.dps}/s within ${tiles(d.burn.r)} tiles (magic)`);
   if (d.radslow) a.push(`Slows enemies ${pct(d.radslow.pct)} within ${tiles(d.radslow.r)} tiles${d.radslow.stack?' (adds on top of other slows)':''}`);
   if (d.spdAura) a.push(`Aura: +${pct(d.spdAura.pct)} attack speed to towers within ${tiles(d.spdAura.r)} tiles${d.spdAura.stack?' (adds on top of other opal auras)':' (highest speed aura applies)'}`);
   if (d.magic) a.push('Magic damage: ignores armor');
+  if (d.magicAmp) a.push(`Hits make enemies within ${d.splash ? d.splash.r : 0} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
   if (d.dmgAura) a.push(`Aura: +${pct(d.dmgAura.pct)} damage to towers within ${tiles(d.dmgAura.r)} tiles`);
   if (d.rangeAura) a.push(`Aura: +${pct(d.rangeAura.pct)} attack range to towers within ${tiles(d.rangeAura.r)} tiles`);
   if (d.armorAura) a.push(`Aura: −${d.armorAura.amt} armor to ${d.armorAura.air&&d.armorAura.ground?'all enemies':d.armorAura.air?'flyers':'ground units'} within ${tiles(d.armorAura.r)} tiles`);
@@ -1752,7 +1753,7 @@ const TIERNAME = ['','Special · tier 1','Special · tier 2','Special · tier 3'
 function card(key, how){
   const d=DEFS[key], el=document.createElement('div'); el.className='card';
   const top=document.createElement('div'); top.className='top'; top.appendChild(gemCanvas(key,120,false));
-  const t=document.createElement('div'); t.innerHTML=`<div class="name">${d.name}</div><div class="sub">${key==='bryvx'?'Legendary':d.rare?'Rare one-shot':TIERNAME[d.tier]} · ${DTYPE_NAME[d.dtype]} damage</div>`; top.appendChild(t); el.appendChild(top);
+  const t=document.createElement('div'); t.innerHTML=`<div class="name">${d.name}</div><div class="sub">${key==='bryvx'?'Legendary':d.rare?'Rare one-shot':TIERNAME[d.tier]} · ${!d.dmg && d.burn ? 'Magic' : DTYPE_NAME[d.dtype]} damage</div>`; top.appendChild(t); el.appendChild(top);
   const st=document.createElement('div'); st.className='stats';
   st.innerHTML = `<div><span>Damage</span><b>${d.dmg?fmtHit(d):'—'}</b></div><div><span>Cooldown</span><b>${d.dmg?d.cd+'s':'—'}</b></div><div><span>Range</span><b>${d.dmg?tiles(d.range):tiles((d.burn||d.radslow||{r:d.range}).r)}</b></div><div><span>Targets</span><b>${d.air&&d.ground?'Both':d.air?'Air':'Ground'}</b></div>`;
   el.appendChild(st);
