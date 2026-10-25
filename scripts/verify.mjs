@@ -95,7 +95,7 @@ add('Replay reaches the claimed wave', 30, run.phase === 'lost' && dw === 0 ? 30
   `${run.wave} vs ${isNaN(claim.wave) ? '?' : claim.wave} claimed${run.phase === 'lost' ? '' : ' (run never ended)'}`);
 const kOk = !isNaN(claim.kills) && Math.abs(run.kills - claim.kills) <= Math.max(2, claim.kills * .02);
 add('Kills match', 10, kOk ? 10 : 0, `${run.kills} vs ${isNaN(claim.kills) ? '?' : claim.kills} claimed`);
-const minWall = run.tick / 60 / 8 * .9;   // fastest possible: the 4× button runs the simulation at 8× real time
+const minWall = run.tick / 60 / 16 * .9;   // fastest possible: the 8× button runs the simulation at 16× real time
 const wallOk = typeof rep.wall === 'number' && rep.wall >= minWall && rep.wall < 7 * 86400;
 add('Played in believable time', 10, wallOk ? 10 : 0, `${Math.round((rep.wall || 0) / 60)} min real time, at least ${Math.ceil(minWall / 60)} min needed`);
 if (run.errors) add('Game ran cleanly', 0, 0, run.errors.join('; ').slice(0, 120));

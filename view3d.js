@@ -1142,7 +1142,8 @@ function syncTowers(T, dt){
     const age = T - o.born, s = age < .25 ? .5 + age*2 : 1; o.g.scale.setScalar(s * (o.key==='bryvx' ? 1 : DEFS[t.key] && DEFS[t.key].kind==='gem' ? 1.15 : 1));
     o.t = t;
     // this round's gems: a thin grey frame; towers that can combine: a glint running round it
-    if (t.draft || t.oneShot || t.flag){ if (!o.frame){ o.frame = new THREE.Mesh(new THREE.PlaneGeometry(.96,.96), new THREE.MeshBasicMaterial({map:frameTex, color:0xd6deec, transparent:true, opacity:.45, depthWrite:false})); o.frame.rotation.x = -Math.PI/2; o.frame.position.set(wx(t.x), .007, wz(t.y)); scene.add(o.frame); } o.frame.visible = !!t.draft; }
+    if (t.draft || t.oneShot || t.flag){ if (!o.frame){ o.frame = new THREE.Mesh(new THREE.PlaneGeometry(.96,.96), new THREE.MeshBasicMaterial({map:frameTex, color:0xffd25a, transparent:true, opacity:.95, depthWrite:false})); o.frame.rotation.x = -Math.PI/2; o.frame.position.set(wx(t.x), .007, wz(t.y)); scene.add(o.frame);
+      { const fill = new THREE.Mesh(new THREE.PlaneGeometry(.96,.96), new THREE.MeshBasicMaterial({color:0xffe9a0, transparent:true, opacity:.22, depthWrite:false})); fill.position.z = -.001; o.frame.add(fill); } } o.frame.visible = !!t.draft; }
     else if (o.frame) o.frame.visible = false;
     const glint = t.oneShot || t.flag;
     if (glint && !o.glint){ o.glint = glowSprite(0xfff2c0, .1, .9); scene.add(o.glint); }
