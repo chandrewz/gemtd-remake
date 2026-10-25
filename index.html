@@ -361,18 +361,18 @@ DEFS.rock = {key:'rock', kind:'rock', name:'Rock', tier:0};
 
 function sp(key, o){ DEFS[key] = Object.assign({key, kind:'special', air:true, ground:true, nd:1, dice:1, proj:13}, o); }
 // ---- tier 1-3 specials (Gem TD) ----
-sp('silver1',  {name:'Silver', tier:1, dtype:'S', color:'#cfd6e6', range:550, cd:1, dmg:19, dice:2, splash:{r:1.4,pct:.6,frost:true}, frost:{pct:.2,dur:2}, upg:{to:'silver2',cost:25}});
-sp('silver2',  {name:'Sterling Silver', tier:2, dtype:'S', color:'#e4e9f4', range:650, cd:1, dmg:39, dice:4, splash:{r:1.5,pct:.6,frost:true}, frost:{pct:.2,dur:2}, upg:{to:'silver3',cost:300}});
-sp('silver3',  {name:'Silver Knight', tier:3, dtype:'S', color:'#f4f7ff', range:750, cd:1, dmg:149, dice:10, splash:{r:2,pct:.7,frost:true}, frost:{pct:.3,dur:2}});
+sp('silver1',  {name:'Silver', tier:1, dtype:'S', color:'#cfd6e6', range:550, cd:1, dmg:19, dice:2, splash:{r:1.4,pct:.6,frost:true}, frost:{pct:.1,dur:2}, upg:{to:'silver2',cost:25}});
+sp('silver2',  {name:'Sterling Silver', tier:2, dtype:'S', color:'#e4e9f4', range:650, cd:1, dmg:39, dice:4, splash:{r:1.5,pct:.6,frost:true}, frost:{pct:.15,dur:2}, upg:{to:'silver3',cost:300}});
+sp('silver3',  {name:'Silver Knight', tier:3, dtype:'S', color:'#f4f7ff', range:750, cd:1, dmg:149, dice:10, splash:{r:2,pct:.7,frost:true}, frost:{pct:.2,dur:2}});
 sp('malachite1',{name:'Malachite', tier:1, dtype:'E', color:'#1fbf8f', range:750, cd:.35, dmg:5, dice:1, multi:4, upg:{to:'malachite2',cost:25}});
 sp('malachite2',{name:'Vivid Malachite', tier:2, dtype:'E', color:'#29d9a0', range:800, cd:.35, dmg:10, dice:2, multi:5, upg:{to:'malachite3',cost:280}});
 sp('malachite3',{name:'Mighty Malachite', tier:3, dtype:'E', color:'#4dffc0', range:800, cd:.35, dmg:44, dice:4, multi:6});
 sp('starruby1',{name:'Star Ruby', tier:1, dtype:'R', color:'#ff4d6d', dmg:0, range:265, burn:{dps:40,r:265}, upg:{to:'starruby2',cost:30}});
 sp('starruby2',{name:'Blood Star', tier:2, dtype:'R', color:'#ff2b52', dmg:0, range:500, burn:{dps:55,r:500}, upg:{to:'starruby3',cost:290}});
 sp('starruby3',{name:'Fire Star', tier:3, dtype:'R', color:'#ff7a2b', dmg:0, range:600, burn:{dps:140,r:600}});
-sp('jade1',    {name:'Jade', tier:1, dtype:'Q', color:'#5ad19a', range:800, cd:.5, dmg:34, dice:6, poison:{pct:.5,dur:2,dps:5}, upg:{to:'jade2',cost:240}});
-sp('jade2',    {name:'Asian Jade', tier:2, dtype:'Q', color:'#6fe0ad', range:800, cd:.45, dmg:79, dice:6, poison:{pct:.5,dur:3,dps:15}, upg:{to:'jade3',cost:250}});
-sp('jade3',    {name:'Lucky Asian Jade', tier:3, dtype:'Q', color:'#8effc4', range:850, cd:.35, dmg:74, dice:6, poison:{pct:.5,dur:4,dps:20}, goldChance:.01, rangeAura:{pct:.15,r:150}});
+sp('jade1',    {name:'Jade', tier:1, dtype:'Q', color:'#5ad19a', range:800, cd:.5, dmg:34, dice:6, poison:{pct:.06,dur:5,dps:5}, upg:{to:'jade2',cost:240}});
+sp('jade2',    {name:'Asian Jade', tier:2, dtype:'Q', color:'#6fe0ad', range:800, cd:.45, dmg:79, dice:6, poison:{pct:.08,dur:6,dps:10}, upg:{to:'jade3',cost:250}});
+sp('jade3',    {name:'Lucky Asian Jade', tier:3, dtype:'Q', color:'#8effc4', range:850, cd:.35, dmg:74, dice:6, poison:{pct:.1,dur:7,dps:15}, goldChance:.01, rangeAura:{pct:.15,r:150}});
 sp('redcrystal1',{name:'Red Crystal', tier:1, dtype:'A', color:'#ff6b8b', range:1300, cd:.8, dmg:59, dice:26, ground:false, armorAura:{amt:4,r:800,air:true}, upg:{to:'redcrystal2',cost:240}});
 sp('redcrystal2',{name:'Red Crystal Facet', tier:2, dtype:'A', color:'#ff8aa3', range:1400, cd:.8, dmg:104, dice:26, ground:false, armorAura:{amt:6,r:850,air:true}, upg:{to:'redcrystal3',cost:240}});
 sp('redcrystal3',{name:'Rose Quartz Crystal', tier:3, dtype:'A', color:'#ffb0c4', range:1500, cd:.75, dmg:149, dice:26, ground:false, armorAura:{amt:8,r:900,air:true}});
@@ -390,7 +390,7 @@ sp('blackopal1',{name:'Black Opal', tier:1, dtype:'O', color:'#7a5cff', range:80
 sp('blackopal2',{name:'Mystic Black Opal', tier:2, dtype:'O', color:'#9b84ff', range:1000, cd:1, dmg:49, dice:1, dmgAura:{pct:.3,r:1000}});
 sp('bloodstone1',{name:'Bloodstone', tier:1, dtype:'R', color:'#c3203f', range:700, cd:.5, dmg:67, dice:1, splash:{r:1.4,pct:.5}, burn:{dps:135,r:200}, upg:{to:'bloodstone2',cost:250}});
 sp('bloodstone2',{name:'Ancient Bloodstone', tier:2, dtype:'R', color:'#e0294d', range:700, cd:.8, dmg:81, dice:20, crit:{c:.15,m:3}, splash:{r:1.5,pct:.5}, burn:{dps:180,r:250}});
-sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:99, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.2,dur:2}, radslow:{pct:.1,r:250,stack:true}, upg:{to:'yellowsapphire2',cost:250}});
+sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:99, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.1,r:250,stack:true}, upg:{to:'yellowsapphire2',cost:250}});
 sp('yellowsapphire2',{name:'Star Yellow Sapphire', tier:2, dtype:'S', color:'#fff08a', range:850, cd:.8, dmg:179, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.1,r:300,stack:true}});
 sp('bryvx',    {name:'The Great Stone', tier:3, dtype:'X', color:'#ffffff', range:850, cd:.8, dmg:1500, dice:1, crit:{c:.3,m:3}, splash:{r:1.5,pct:.5}});
 // ---- rare one-shots (from the Dota 2 version): three Perfect gems placed in the same round ----
@@ -401,7 +401,7 @@ sp('obsidian', {name:'Obsidian', tier:3, rare:true, dtype:'S', color:'#6a5fa8', 
 sp('kohinoor',   {name:'Koh-i-Noor Diamond', tier:4, dtype:'X', color:'#fff3cc', range:950, cd:.55, dmg:520, dice:180, crit:{c:.3,m:3}, splash:{r:1.3,pct:.5}});
 sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', range:1100, cd:.8, dmg:380, dice:120, splash:{r:3,pct:1,frost:true}, frost:{pct:.3,dur:2}, radslow:{pct:.15,r:550,stack:true}, dmgAura:{pct:.3,r:230}, spdAura:{pct:.5,r:214}});
 sp('crownprince',{name:'Crown Prince Ruby', tier:4, dtype:'X', color:'#ff2e4d', range:800, cd:.6, dmg:260, dice:90, crit:{c:.2,m:3}, splash:{r:1.6,pct:.6}, burn:{dps:420,r:330}});
-sp('plutonium',  {name:'Plutonium Core', tier:4, dtype:'X', color:'#b6ff2e', range:700, cd:.4, dmg:140, dice:40, multi:7, burn:{dps:520,r:300}, radslow:{pct:.6,r:300}});
+sp('plutonium',  {name:'Plutonium Core', tier:4, dtype:'X', color:'#b6ff2e', range:700, cd:.4, dmg:140, dice:40, multi:7, burn:{dps:520,r:300}, radslow:{pct:.2,r:300}});
 sp('cullinan',   {name:'Diamond Cullinan', tier:4, dtype:'X', color:'#f5fbff', range:900, cd:.9, dmg:900, dice:450, crit:{c:.3,m:3}});
 sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, dmgAura:{pct:.3,r:260}});
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
@@ -562,7 +562,7 @@ const LS_KEY = 'gemtd-web-best';
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.25m';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.25n';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
@@ -873,7 +873,7 @@ function step(dt){
       if (e.dead) continue;
       const dist = Math.hypot(e.x-cx, e.y-cy);
       if (d.burn && dist <= U(d.burn.r)){ hurt(e, d.burn.dps*dt*mAmp(e), t, true); e.burnT = .2; }
-      if (d.radslow && dist <= U(d.radslow.r)){ if (d.radslow.stack) e.aSlowAdd = Math.max(e.aSlowAdd, d.radslow.pct); else e.aSlow = Math.max(e.aSlow, d.radslow.pct); }   // sapphire auras add on top of other slows
+      if (d.radslow && dist <= U(d.radslow.r)){ if (d.radslow.stack) e.aSlowAdd = Math.max(e.aSlowAdd, d.radslow.pct); else e.aSlow = Math.max(e.aSlow, d.radslow.pct); }   // sapphire auras (aSlowAdd) and Plutonium (aSlow) are separate kinds
       if (d.armorAura && dist <= U(d.armorAura.r) && ((e.fly && d.armorAura.air) || (!e.fly && d.armorAura.ground))) e.aArmor = Math.max(e.aArmor, d.armorAura.amt);
     }
   }
@@ -887,7 +887,8 @@ function step(dt){
     if (e.amp && e.amp.t>0) e.amp.t -= dt;
     if (e.poison && e.poison.t>0){ e.poison.t -= dt; hurt(e, e.poison.dps*dt*mAmp(e), e.poison.src, true); if (e.dead) continue; }
     if (e.stun>0){ e.stun -= dt; continue; }
-    const slow = Math.min(.8, Math.max(e.frost&&e.frost.t>0?e.frost.pct:0, e.poison&&e.poison.t>0?e.poison.pct:0, e.aSlow) + (e.aSlowAdd||0));
+    // four kinds of slow add together: the strongest frost hit, the strongest poison, Plutonium's aura and the strongest sapphire aura
+    const slow = Math.min(.8, (e.frost&&e.frost.t>0?e.frost.pct:0) + (e.poison&&e.poison.t>0?e.poison.pct:0) + e.aSlow + (e.aSlowAdd||0));
     let mv = e.speed*(1-slow)*dt;
     while (mv>0 && e.i < e.pts.length){
       const p = e.pts[e.i], dx = p.x-e.x, dy = p.y-e.y, dd = Math.hypot(dx,dy);
@@ -2749,7 +2750,7 @@ function abilities(d){
   if (d.stun) a.push(`${(d.stun.c*100).toFixed(1).replace('.0','')}% chance to stun for ${d.stun.dur}s`);
   if (d.shred) a.push(`Hits reduce armor by ${d.shred.amt} for ${d.shred.dur}s`);
   if (d.burn) a.push(`Burns enemies for ${d.burn.dps}/s within ${tiles(d.burn.r)} tiles (magic)`);
-  if (d.radslow) a.push(`Slows enemies ${pct(d.radslow.pct)} within ${tiles(d.radslow.r)} tiles${d.radslow.stack?' (adds on top of other slows)':''}`);
+  if (d.radslow) a.push(`Slows enemies ${pct(d.radslow.pct)} within ${tiles(d.radslow.r)} tiles`);
   if (d.spdAura) a.push(`Aura: +${pct(d.spdAura.pct)} attack speed to towers within ${tiles(d.spdAura.r)} tiles${d.spdAura.stack?' (adds on top of other opal auras)':' (highest speed aura applies)'}`);
   if (d.magic) a.push('Magic damage: ignores armor');
   if (d.magicAmp) a.push(`Hits make enemies within ${d.magicAmp.r} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
@@ -2950,8 +2951,8 @@ function renderBook(){
   ['gems','special','ultimate','damage'].forEach(k=> $('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on', k===tab));
   if (tab==='gems'){
     const TRAIT = {A:'Hits flyers only.', Q:'Very fast attacks at short range.', D:'Hits ground only. 25% chance for double damage.',
-      E:'Poisons: damage over time and a slow.', O:'Weak attack, but its aura speeds up nearby towers. Only the strongest speed aura counts; Opal Nebula adds on top.', R:'Splash damage around the target.',
-      S:'Slows its target.', T:'Hits several targets at once.'};
+      E:'Poisons: damage over time and a slow. Poison slows add to sapphire slows.', O:'Weak attack, but its aura speeds up nearby towers. Only the strongest speed aura counts; Opal Nebula adds on top.', R:'Splash damage around the target.',
+      S:'Slows its target. Frost, poison, sapphire auras and Plutonium Core each count once and add together, up to 80%.', T:'Hits several targets at once.'};
     body.innerHTML = `<p class="hint">Eight gem types in six qualities. Each round you place five random gems; chance upgrades raise the odds of better qualities. Two identical gems combine one quality higher, four combine two higher. Great comes only from combining.</p>` +
       TYPES.map(t=>`<div class="gemtype"><div class="gt-head"><b style="color:${GT[t].color}">${GT[t].name} (${SH[t]})</b><span>${TRAIT[t]} Strong vs ${AORDER.filter((a,i)=>ATK[t][i]>=1.5).join(', ')||'—'}.</span></div>
         <div class="gt-row">${[1,2,3,4,5,6].map(q=>{ const d=DEFS[t+q]; return `<div class="gt-cell"><span data-gem="${t+q}"></span><b>${QN[q]}</b><small>${fmtHit(d)} dmg · ${d.cd}s · ${tiles(d.range)} tiles</small>${d.poison?`<small>poison ${d.poison.dps}/s, ${pct(d.poison.pct)} slow</small>`:''}${d.spdAura?`<small>+${pct(d.spdAura.pct)} speed aura</small>`:''}${d.multi?`<small>${d.multi} targets</small>`:''}${d.splash?`<small>splash ${d.splash.r} tiles</small>`:''}</div>`; }).join('')}</div></div>`).join('');
