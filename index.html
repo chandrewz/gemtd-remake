@@ -243,6 +243,8 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
     <div class="body">
       <div class="setrow"><div><b>Board</b><small>The 3D board loads the first time you pick it.</small></div><div class="seg"><button data-view="2d" id="v2d">2D</button><button data-view="3d" id="v3d">3D</button></div></div>
       <div class="setrow" id="qRow"><div><b>3D quality</b><small>Low turns off shadows and glow, for slower computers and phones.</small></div><div class="seg"><button data-q="high" id="qHigh">High</button><button data-q="low" id="qLow">Low</button></div></div>
+      <div class="setrow" id="lookRow"><div><b>3D lighting</b><small>Night makes every glowing tower stand out.</small></div><div class="seg"><button data-look="day" id="lDay">Day</button><button data-look="night" id="lNight">Night</button></div></div>
+      <div class="setrow" id="olRow"><div><b>Outlines</b><small>A dark painted edge round every tower.</small></div><div class="seg"><button data-ol="1" id="oOn">On</button><button data-ol="0" id="oOff">Off</button></div></div>
       <div class="setrow" id="camRow"><div><b>3D camera</b><small>Drag to pan, right-drag to rotate, scroll to zoom, arrow keys to move.</small></div><button id="camReset">Reset camera</button></div>
       <div class="setrow"><div><b>Game speed</b><small>Hotkeys 1, 2 and 4.</small></div><div class="seg"><button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button></div></div>
       <div class="setrow"><div><b>Show path during waves</b><small>The path always shows while you build. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
@@ -3180,21 +3182,23 @@ window.gemDev = {
 window.GemGame = { consts:{GW, GH, PORTAL, CASTLE, CPS, NOBUILD, IDX, DEFS, GT, ARMOR, QN, RECIPES},
   state:()=>S, hover:()=>hover, ui, describe:t => t.key==='rock' ? {name:'Rock', sub:'Press R to remove'} : {name:DEFS[t.key].name, sub: DEFS[t.key].kind==='gem' ? `${DTYPE_NAME[DEFS[t.key].dtype]} damage` : t.key==='bryvx' ? 'Legendary' : DEFS[t.key].rare ? 'Rare one-shot' : 'Special'}, emptyRoute:()=>EMPTY_ROUTE, waveInfo, flyPts:()=>FLY_PTS, U, Tower3D,
   input:{hover:boardHover, click:boardClick, leave:boardLeave} };
-const view3d = {on:false, mod:null, loading:false, q:'high'};
+const view3d = {on:false, mod:null, loading:false, q:'high', look:'day', ol:true};
+try { view3d.look = localStorage.getItem('gemtd.look') || 'day'; view3d.ol = localStorage.getItem('gemtd.outline')!=='0'; } catch(e){}
 try { if (localStorage.getItem('gemtd.q3d')==='low') view3d.q = 'low'; } catch(e){}
 async function setView(on){
   if (on && !view3d.mod){ if (view3d.loading) return; view3d.loading = true; renderSettings();
     try { view3d.mod = await import('./view3d.js'); } catch(e){ console.error(e); view3d.loading = false; renderSettings(); toast('Couldn’t load the 3D view', true); return; }
     view3d.loading = false; }
   view3d.on = !!on; document.body.classList.toggle('v3d', view3d.on);
-  if (view3d.on){ view3d.mod.start($('frame'), cv); view3d.mod.setQuality(view3d.q); } else if (view3d.mod) view3d.mod.stop();
+  if (view3d.on){ view3d.mod.setLook(view3d.look); view3d.mod.setOutline(view3d.ol); view3d.mod.start($('frame'), cv); view3d.mod.setQuality(view3d.q); } else if (view3d.mod) view3d.mod.stop();
   try { localStorage.setItem('gemtd.view', view3d.on ? '3d' : '2d'); } catch(e){}
   renderSettings();
 }
 function renderSettings(){
   $('v2d').classList.toggle('on', !view3d.on); $('v3d').classList.toggle('on', view3d.on); $('v3d').textContent = view3d.loading ? 'Loading…' : '3D';
   $('qHigh').classList.toggle('on', view3d.q==='high'); $('qLow').classList.toggle('on', view3d.q==='low');
-  $('qRow').hidden = $('camRow').hidden = !view3d.on;
+  $('qRow').hidden = $('camRow').hidden = $('lookRow').hidden = $('olRow').hidden = !view3d.on;
+  $('lDay').classList.toggle('on', view3d.look==='day'); $('lNight').classList.toggle('on', view3d.look==='night'); $('oOn').classList.toggle('on', view3d.ol); $('oOff').classList.toggle('on', !view3d.ol);
   $('pOn').classList.toggle('on', ui.showPath); $('pOff').classList.toggle('on', !ui.showPath);
 }
 $('setBtn').onclick = () => { renderSettings(); $('setModal').hidden = false; };
@@ -3202,6 +3206,8 @@ $('setClose').onclick = () => { $('setModal').hidden = true; };
 $('setModal').addEventListener('click', ev => { if (ev.target.id==='setModal') $('setModal').hidden = true; });
 $('v2d').onclick = () => setView(false); $('v3d').onclick = () => setView(true);
 $('qHigh').onclick = $('qLow').onclick = ev => { view3d.q = ev.target.dataset.q; try { localStorage.setItem('gemtd.q3d', view3d.q); } catch(e){} if (view3d.on) view3d.mod.setQuality(view3d.q); renderSettings(); };
+$('lDay').onclick = $('lNight').onclick = ev => { view3d.look = ev.target.dataset.look; try { localStorage.setItem('gemtd.look', view3d.look); } catch(e){} if (view3d.mod) view3d.mod.setLook(view3d.look); renderSettings(); };
+$('oOn').onclick = $('oOff').onclick = ev => { view3d.ol = ev.target.dataset.ol==='1'; try { localStorage.setItem('gemtd.outline', view3d.ol ? '1' : '0'); } catch(e){} if (view3d.mod) view3d.mod.setOutline(view3d.ol); renderSettings(); };
 $('camReset').onclick = () => { if (view3d.mod) view3d.mod.resetView(); };
 $('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; renderSettings(); };
 let wantView = '3d'; try { wantView = localStorage.getItem('gemtd.view') || '3d'; } catch(e){}

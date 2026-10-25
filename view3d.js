@@ -7,6 +7,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { mergeVertices, mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const G = window.GemGame;   // the game's live bindings, published by index.html
@@ -584,6 +585,192 @@ const FORMS = {
     const rb = ribbons(.22, .9, 3, '#b07cff', 1.1); g.add(rb); const rb2 = ribbons(.18, .8, 2, '#5af0ff', -1); g.add(rb2);
     g.add(pool(C('#6a5fa8'), 1.1, .3)); return {g, top:.9, anims:[{o:rb, kind:'spin', speed:.8}, {o:rb2, kind:'spin', speed:-1}]}; },
 };
+const NEWFORMS = {
+  // Star Ruby: a mound of black rock heaped into a pyramid, molten cracks through it, fire rising from its peak
+  starruby(t){ const g = new THREE.Group(), anims = [], rock = glowStone('#0e0a0a', '#ff4a12', 1.35);
+    const layers = [0, 3, 4, 5][t], parts = [], R = mkRng(300 + t);
+    for (let l=0;l<layers;l++){ const n = Math.max(1, 9 - l*2), r = .3 - l*.07, y = l*.13;
+      for (let i=0;i<n;i++){ const a = i/n*Math.PI*2 + l*.6, b = roughBlock(.15 - l*.015, .18 + R()*.06, .13 - l*.012, 300 + l*20 + i + t*100, .3);
+        xf(b, {rz:-(.1 + R()*.1), x:n > 1 ? r : 0, y}); xf(b, {ry:-a}); parts.push(b); } }
+    const pg = new THREE.ConeGeometry(.1, .3 + t*.06, 5); pg.deleteAttribute('uv'); const peak = withH(pg.toNonIndexed()); peak.translate(0, .15 + t*.03, 0); xf(peak, {y:layers*.13}); parts.push(peak);
+    g.add(mesh(mergeGeometries(parts), rock));
+    // glowing pebbles scattered round the foot
+    const peb = []; for (let i=0;i<10;i++){ const a = i*2.4, d = .36 + (i%3)*.05; peb.push(xf(roughBlock(.05, .03, .04, 400+i, .3), {x:Math.cos(a)*d, z:Math.sin(a)*d, ry:a})); }
+    g.add(mesh(mergeGeometries(peb), glowStone('#120c0a', '#ff6a1a', .8)));
+    const topY = layers*.13 + .2 + t*.05;
+    const fl = flames(.35 + t*.2, .25 + t*.07, '#ffe08a', ['', '#ff6a10', '#ff2a3a', '#ff5a10'][t], t); fl.position.y = topY - .05; g.add(fl);
+    if (t===3){ const fl2 = flames(.5, .5, '#ffc060', '#ff3a10', 7); fl2.position.y = .15; g.add(fl2); }
+    g.add(at(glowSprite(C('#ff5a20'), .6 + t*.2, .25), 0, topY, 0));
+    g.add(pool(C('#ff4a20'), .9 + t*.1, .3)); return {g, top:topY, embers:true, anims}; },
+  // Jade: a green obelisk on a stepped plinth, a glowing diamond rune on its face, light swirling round it; Lucky Asian Jade adds a spill of gold
+  jade(t){ const g = new THREE.Group(), anims = [], stone = glowStone('#123a24', '#5aff9a', .9), base = glowStone('#0e2a1a', '#5aff9a', .5);
+    g.add(runeCircle(.46, '#6aff9a', 'ring', .55));
+    let y = 0; for (let i=0;i<3;i++){ const w = .52 - i*.09, h = .06; g.add(mesh(withH(new THREE.BoxGeometry(w, h, w).toNonIndexed()), base, 0, y + h/2, 0)); y += h; }
+    const H = [0, .55, .72, .9][t];
+    const ob = mesh(withH(new THREE.CylinderGeometry(.07, .13, H, 4).toNonIndexed()), stone, 0, y + H/2, 0); ob.rotation.y = Math.PI/4; g.add(ob);
+    const tip = mesh(withH(new THREE.ConeGeometry(.07*Math.SQRT2*.72, .16, 4).toNonIndexed()), stone, 0, y + H + .08, 0); tip.rotation.y = Math.PI/4; g.add(tip);
+    for (const [rx, ry] of [[0,0],[0,Math.PI/2],[0,Math.PI],[0,-Math.PI/2]]){ const d = mesh(withH(new THREE.OctahedronGeometry(.055, 0).toNonIndexed()), crysMat('#02301a', '#3aff8a', '#f0fff4', {glow:1.3}), 0, y + H*.5, 0);
+      d.scale.set(.6, 1.2, .25); d.position.x = Math.sin(ry)*.1; d.position.z = Math.cos(ry)*.1; d.rotation.y = ry; g.add(d); }
+    g.add(at(starSprite('#9affc0', .35, .7), 0, y + H*.5, .11));
+    if (t>=2){ const rb = ribbons(.24, H + .1, t===3 ? 4 : 2, '#7affa8', 1.3); rb.position.y = y; g.add(rb); anims.push({o:rb, kind:'spin', speed:1}); }
+    if (t===3) g.add(coins(22, .36, 5));
+    g.add(pool(C('#4aff8a'), .9, .26)); return {g, top:y + H*.8, anims}; },
+  // Dark Emerald: a carved pillar of green stone in banded tiers, a glowing rune on each tier, standing in a pool of green light
+  darkemerald(t){ const g = new THREE.Group(), anims = [], stone = glowStone('#12301e', '#4aff7a', .55), band = glowStone('#1a3a26', '#6aff9a', .45);
+    g.add(runeCircle(.46, '#4aff7a', 'ring', .6));
+    g.add(mesh(withH(new THREE.CylinderGeometry(.3, .34, .08, 8).toNonIndexed()), band, 0, .04, 0));
+    const tiers = t===1 ? 3 : 4; let y = .08;
+    for (let i=0;i<tiers;i++){ const h = .17;
+      g.add(mesh(withH(new THREE.BoxGeometry(.15, h, .15).toNonIndexed()), stone, 0, y + h/2, 0));
+      for (let k=0;k<4;k++){ const a = k/4*Math.PI*2, r = mesh(new THREE.PlaneGeometry(.08, .12), new THREE.MeshBasicMaterial({map:null, color:0x6aff9a, transparent:true, opacity:.9}), Math.sin(a)*.0755, y + h/2, Math.cos(a)*.0755); r.rotation.y = a; r.rotation.z = Math.PI/4; r.scale.set(.6, .6, 1); g.add(r); }
+      y += h; g.add(mesh(withH(new THREE.BoxGeometry(.2, .045, .2).toNonIndexed()), band, 0, y + .022, 0)); y += .045; }
+    g.add(at(glowSprite(C('#6aff9a'), .5, .3), 0, y + .05, 0));
+    const rb = ribbons(.26, y + .1, t===1 ? 2 : 4, '#8affb0', 1.1); g.add(rb); anims.push({o:rb, kind:'spin', speed:.9});
+    g.add(pool(C('#4aff7a'), .95, .28)); return {g, top:y, anims}; },
+  // Bloodstone: a crown of red crystal bursting from black rock, blue lightning crackling round a pool at its foot
+  bloodstone(t){ const g = new THREE.Group(), anims = [], red = crysMat('#3a0008', '#ff2438', '#ffe0d0', {glow:1.2});
+    g.add(runeCircle(.46, '#6ac8ff', 'ring', .6)); g.add(runeCircle(.36, '#ff3a4a', 'ring', .4));
+    const rocks = []; for (let i=0;i<9;i++){ const a = i/9*Math.PI*2, b = roughBlock(.12, .1 + (i%3)*.04, .1, 500+i, .3); xf(b, {rz:-.4, x:.17}); xf(b, {ry:-a}); rocks.push(b); }
+    g.add(mesh(mergeGeometries(rocks), glowStone('#0c0a0e', '#ff3a4a', .5)));
+    const k = t===1 ? 1 : 1.3, parts = [xf(obelisk(.1*k, .5*k, 510, false), {y:.06})];
+    for (let i=0;i<(t===1 ? 4 : 6);i++){ const a = i/(t===1 ? 4 : 6)*Math.PI*2 + .4, o = obelisk(.06*k, .3*k, 520+i, false); xf(o, {rz:-.5, x:.06}); xf(o, {ry:-a, y:.06}); parts.push(o); }
+    g.add(new THREE.Mesh(mergeGeometries(parts), red)); g.add(at(starSprite('#ffe0c0', .35, .7), 0, .3*k, .08));
+    if (t===2){ const sh = new THREE.Group(); sh.position.y = .55; g.add(sh); for (let i=0;i<6;i++){ const a = i/6*Math.PI*2, s = mesh(withH(new THREE.OctahedronGeometry(.025, 0).toNonIndexed()), red, Math.cos(a)*.3, (i%2)*.12, Math.sin(a)*.3); s.scale.y = 1.6; sh.add(s); } anims.push({o:sh, kind:'spin', speed:.5}); }
+    for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + .3, b = new THREE.Mesh(lightningGeo(new THREE.Vector3(Math.cos(a)*.42, .02, Math.sin(a)*.42), new THREE.Vector3(Math.cos(a+.5)*.3, .32, Math.sin(a+.5)*.3), 540+i, .1, 7), ribbonMat('#8ad8ff')); g.add(b); anims.push({o:b, kind:'flicker', phase:i}); }
+    g.add(pool(C('#ff2a40'), .95, .3)); return {g, top:.4*k, anims}; },
+  // Koh-i-Noor: a tiered tower of dark stone ribbed with blue light, a white-blue crystal burning at its crown, violet lightning coiling round
+  kohinoor(){ const g = new THREE.Group(), anims = [], stone = glowStone('#141428', '#5ab8ff', 1.1), rim = glowStone('#1c1c34', '#9a7aff', .6);
+    g.add(mesh(withH(new THREE.CylinderGeometry(.44, .48, .07, 24).toNonIndexed()), rim, 0, .035, 0)); g.add(runeCircle(.5, '#8a7aff', 'ring', .6));
+    let y = .07; [[.3, .34, .22], [.24, .28, .2], [.19, .22, .18], [.14, .17, .15]].forEach(([rt, rb, h]) => {
+      const tier = mesh(withH(new THREE.CylinderGeometry(rt*.78, rb*.92, h, 10).toNonIndexed()), stone, 0, y + h/2, 0); g.add(tier);
+      for (let k=0;k<10;k++){ const a = k/10*Math.PI*2, rib = mesh(new THREE.BoxGeometry(.022, h*.9, .03), rim, Math.cos(a)*rb*.86, y + h/2, Math.sin(a)*rb*.86); rib.rotation.y = -a; rib.rotation.z = (rb - rt*.78)/h*.8*0; g.add(rib); }
+      const lip = mesh(new THREE.TorusGeometry(rt, .02, 5, 24), rim, 0, y + h, 0); lip.rotation.x = Math.PI/2; g.add(lip); y += h; });
+    const cr = mesh(obelisk(.08, .22, 600, false), crysMat('#0a2a6a', '#8ad0ff', '#ffffff', {glow:1.3}), 0, y, 0); g.add(cr);
+    g.add(at(starSprite('#d8f0ff', .45, .8), 0, y + .14, 0)); g.add(at(glowSprite(C('#7ab0ff'), .7, .3), 0, y + .1, 0));
+    const rb = ribbons(.34, y + .1, 3, '#b08aff', 1.4); g.add(rb); anims.push({o:rb, kind:'spin', speed:.8});
+    for (let i=0;i<3;i++){ const a = i/3*Math.PI*2, b = new THREE.Mesh(lightningGeo(new THREE.Vector3(Math.cos(a)*.35, .1, Math.sin(a)*.35), new THREE.Vector3(Math.cos(a+1.4)*.1, y + .15, Math.sin(a+1.4)*.1), 610+i, .14, 9), ribbonMat('#c8a0ff')); g.add(b); anims.push({o:b, kind:'flicker', phase:i*1.7}); }
+    g.add(pool(C('#7a8aff'), 1.1, .3)); return {g, top:y + .1, sparkle:true, anims}; },
+  // Wings of Topaz: two great wings of golden light rising out of a rippling rune on the ground, a topaz heart where they meet
+  wingsstone(){ const g = new THREE.Group(), anims = [], gold = crysMat('#3a2400', '#ffc830', '#fff8d8', {glow:1.3});
+    for (const [r, op] of [[.46, .7], [.34, .55], [.22, .45]]) g.add(runeCircle(r, '#ffd84a', 'ring', op));
+    const w = new THREE.Group(); w.position.y = .45; g.add(w);
+    for (const s of [-1,1]){ const feathers = [];
+      for (let i=0;i<9;i++){ const t = i/8, len = .26 + Math.sin(t*Math.PI)*.22 + (1-t)*.12, o = obelisk(.018, len, 700 + i + (s>0 ? 20 : 0), false);
+        xf(o, {rz:-s*(.15 + t*1.25)}); xf(o, {x:s*(.03 + t*.06), y:t*.12}); feathers.push(o); }
+      const lower = []; for (let i=0;i<5;i++){ const o = obelisk(.014, .22 - i*.02, 740 + i + (s>0 ? 20 : 0), false); xf(o, {rz:-s*(2.4 + i*.15)}); xf(o, {x:s*.03}); lower.push(o); }
+      w.add(new THREE.Mesh(mergeGeometries([...feathers, ...lower]), gold)); }
+    const heart = mesh(withH(new THREE.OctahedronGeometry(.045, 0).toNonIndexed()), crysMat('#4a2a00', '#ffe060', '#ffffff', {glow:1.4})); heart.scale.y = 1.6; w.add(heart);
+    w.add(at(starSprite('#fff2b0', .4, .9), 0, 0, .02));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(.008, .03, .45, 8, 1, true), ribbonMat('#ffe08a')); stem.position.y = .22; g.add(stem);
+    g.add(at(glowSprite(C('#ffd84a'), 1.1, .25), 0, .5, 0));
+    w.scale.setScalar(1.35); w.position.y = .5;
+    anims.push({o:w, kind:'bob', amp:.025, speed:1.1});
+    g.add(pool(C('#ffc830'), 1.1, .3)); return {g, top:.55, anims}; },
+  // Obsidian: a great shard of black glass split by a blue fissure, ringed with spikes, golden lightning breaking from it
+  obsidian(){ const g = new THREE.Group(), anims = [], glass = glowStone('#14161e', '#5aa0ff', .35);
+    g.add(runeCircle(.45, '#ffd27a', 'ring', .45));
+    const body = new THREE.Group(); body.position.y = .55; g.add(body);
+    const shard = mesh(withH(new THREE.OctahedronGeometry(.2, 0).toNonIndexed()), glass); shard.scale.set(1.1, 2.1, .85); body.add(shard);
+    const core = mesh(withH(new THREE.OctahedronGeometry(.07, 0).toNonIndexed()), crysMat('#0a1a6a', '#4a8aff', '#e8f4ff', {glow:1.5}), 0, 0, .085); core.scale.set(.45, 4, .4); body.add(core);
+    body.add(at(glowSprite(C('#4a8aff'), .45, .5), 0, 0, .1));
+    const sp = []; for (let i=0;i<12;i++){ const a = i/12*Math.PI*2, o = withH(new THREE.ConeGeometry(.035, .16 + (i%2)*.08, 4).toNonIndexed()); xf(o, {rz:-Math.PI/2}); xf(o, {x:.2 + (i%2)*.03}); xf(o, {rz:a}); sp.push(o); }
+    const ring = new THREE.Mesh(mergeGeometries(sp), glass); ring.scale.z = .5; body.add(ring);
+    body.add(at(glowSprite(C('#ffc040'), 1.1, .22), 0, 0, -.08));
+    for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + .6, b = new THREE.Mesh(lightningGeo(new THREE.Vector3(Math.cos(a)*.15, .55 + Math.sin(a)*.2, 0), new THREE.Vector3(Math.cos(a)*.6, .55 + Math.sin(a)*.5, .05), 800+i, .12, 7), ribbonMat('#ffd060')); g.add(b); anims.push({o:b, kind:'flicker', phase:i*1.3}); }
+    anims.push({o:body, kind:'bob', amp:.03, speed:1}, {o:body, kind:'spin', speed:.2});
+    g.add(pool(C('#4a7aff'), .9, .25)); return {g, top:.7, anims}; },
+};
+delete NEWFORMS.wingsstone;   // keep the earlier crystal-winged design
+const NEWFORMS2 = {
+  // Star Ruby: a mound of black rock with molten seams; each upgrade grows it toward a volcano with a burning crater
+  starruby(t){ const g = new THREE.Group(), anims = [], rock = glowStone('#0e0a0a', '#ff4a12', 1.3), R = mkRng(300 + t);
+    const layers = [0, 2, 3, 4][t], parts = [];
+    for (let l=0;l<layers;l++){ const n = 10 - l*2, r = .3 - l*.065, y = l*.12;
+      for (let i=0;i<n;i++){ const a = i/n*Math.PI*2 + l*.6, b = roughBlock(.15 - l*.015, .16 + R()*.05, .13 - l*.012, 300 + l*20 + i + t*100, .25);
+        xf(b, {rz:-(.12 + R()*.08), x:r, y}); xf(b, {ry:-a}); parts.push(b); } }
+    g.add(mesh(mergeGeometries(parts), rock));
+    // the crater: a ring of jagged teeth round a pool of lava
+    const cy = layers*.12 + .02, cr = [0, .1, .12, .14][t], teeth = [];
+    for (let i=0;i<(t===1 ? 6 : 9);i++){ const a = i/(t===1 ? 6 : 9)*Math.PI*2, h = .06 + (i%3)*.03 + t*.015, c = new THREE.ConeGeometry(.035, h, 4); c.deleteAttribute('uv');
+      const cg = withH(c.toNonIndexed()); xf(cg, {y:h/2}); xf(cg, {rz:-.25}); xf(cg, {x:cr, y:cy}); xf(cg, {ry:-a}); teeth.push(cg); }
+    g.add(mesh(mergeGeometries(teeth), rock));
+    const lava = mesh(new THREE.CircleGeometry(cr*.95, 20), new THREE.MeshBasicMaterial({color:new THREE.Color(2.2, .8, .15)}), 0, cy + .02, 0); lava.rotation.x = -Math.PI/2; g.add(lava);
+    const fl = flames(.25 + t*.18, .18 + t*.06, '#ffe08a', ['', '#ff7a10', '#ff3a20', '#ff5a10'][t], t); fl.position.y = cy + .01; g.add(fl);
+    if (t>=2){ // molten streams running down the sides
+      for (let i=0;i<(t===2 ? 3 : 5);i++){ const a = i/(t===2 ? 3 : 5)*Math.PI*2 + .3, st = mesh(new THREE.BoxGeometry(.03, cy*.9, .02), new THREE.MeshBasicMaterial({color:new THREE.Color(1.8, .5, .1)}), Math.cos(a)*(cr + .1), cy*.45, Math.sin(a)*(cr + .1));
+        st.lookAt(0, st.position.y, 0); st.rotateX(-.38); g.add(st); } }
+    if (t===3){ const sh = new THREE.Group(); sh.position.y = cy + .3; g.add(sh);
+      for (let i=0;i<5;i++){ const a = i/5*Math.PI*2, b = mesh(roughBlock(.05, .05, .04, 380+i, .3), rock, Math.cos(a)*.3, (i%2)*.1, Math.sin(a)*.3); sh.add(b); }
+      anims.push({o:sh, kind:'spin', speed:.5}); }
+    g.add(at(glowSprite(C('#ff5a20'), .5 + t*.25, .25), 0, cy + .1, 0));
+    g.add(pool(C('#ff4a20'), .8 + t*.15, .28)); return {g, top:cy + .1, embers:true, anims}; },
+  // Jade: a pale, milky green obelisk on a stepped plinth, soft rune diamonds on its faces; Lucky Asian Jade adds a spill of gold
+  jade(t){ const g = new THREE.Group(), stone = glowStone('#4a9a72', '#c8ffd8', .35), base = glowStone('#2e6a4c', '#a8f0c0', .25);
+    g.add(runeCircle(.44, '#9af0b8', 'ring', .35));
+    let y = 0; for (let i=0;i<3;i++){ const w = .52 - i*.09, h = .06; g.add(mesh(withH(new THREE.BoxGeometry(w, h, w).toNonIndexed()), base, 0, y + h/2, 0)); y += h; }
+    const H = [0, .5, .66, .82][t];
+    const ob = mesh(withH(new THREE.CylinderGeometry(.07, .13, H, 4).toNonIndexed()), stone, 0, y + H/2, 0); ob.rotation.y = Math.PI/4; g.add(ob);
+    const tip = mesh(withH(new THREE.ConeGeometry(.07*Math.SQRT2*.72, .16, 4).toNonIndexed()), stone, 0, y + H + .08, 0); tip.rotation.y = Math.PI/4; g.add(tip);
+    for (const ry of [0, Math.PI/2, Math.PI, -Math.PI/2]){ const d = mesh(new THREE.PlaneGeometry(.07, .1), new THREE.MeshBasicMaterial({color:0xb8ffd0, transparent:true, opacity:.8}), Math.sin(ry)*.081, y + H*.45, Math.cos(ry)*.081);
+      d.rotation.y = ry; d.rotation.z = Math.PI/4; d.scale.set(.6, .6, 1); g.add(d); }
+    if (t===3) g.add(coins(22, .36, 5));
+    g.add(pool(C('#8af0b0'), .8, .16)); return {g, top:y + H*.8, anims:[]}; },
+  // Dark Emerald: a tall carved pillar of deep, polished emerald, banded in dark stone, an emerald burning at its crown
+  darkemerald(t){ const g = new THREE.Group(), anims = [], gem = crysMat('#001a08', '#0aa040', '#c8ffd8', {glow:.9}), band = glowStone('#0a1a10', '#1aff6a', .5);
+    g.add(runeCircle(.5, '#1aff6a', 'ring', .5));
+    g.add(mesh(withH(new THREE.CylinderGeometry(.34, .38, .09, 8).toNonIndexed()), band, 0, .045, 0));
+    const tiers = t===1 ? 3 : 4; let y = .09;
+    for (let i=0;i<tiers;i++){ const h = .2;
+      const seg = mesh(withH(new THREE.CylinderGeometry(.1, .11, h, 6).toNonIndexed()), gem, 0, y + h/2, 0); g.add(seg);
+      y += h; g.add(mesh(withH(new THREE.CylinderGeometry(.15, .14, .05, 6).toNonIndexed()), band, 0, y + .025, 0)); y += .05; }
+    const crown = mesh(obelisk(.08, .22, 610, false), crysMat('#002a10', '#20ff70', '#f0fff4', {glow:1.3}), 0, y, 0); g.add(crown);
+    g.add(at(starSprite('#a8ffc8', .35, .75), 0, y + .14, 0)); g.add(at(glowSprite(C('#1aff6a'), .6, .3), 0, y + .1, 0));
+    if (t===2){ for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + Math.PI/4, o = mesh(obelisk(.035, .2, 620+i, false), gem, Math.cos(a)*.22, .09, Math.sin(a)*.22); o.rotation.z = -Math.cos(a)*.2; o.rotation.x = Math.sin(a)*.2; g.add(o); } }
+    g.scale.setScalar(1.25);
+    g.add(pool(C('#1aff6a'), .9, .26)); return {g, top:(y + .1)*1.25, anims}; },
+  // Obsidian: a black glass obelisk on a stepped plinth, split by a blue fissure, spikes at its foot, gold lightning breaking from it
+  obsidian(){ const g = new THREE.Group(), anims = [], glass = glowStone('#0a0b10', '#3a6aff', .12);
+    g.add(runeCircle(.46, '#ffd27a', 'ring', .45));
+    let y = 0; for (let i=0;i<3;i++){ const w = .56 - i*.1, h = .06; g.add(mesh(withH(new THREE.BoxGeometry(w, h, w).toNonIndexed()), glass, 0, y + h/2, 0)); y += h; }
+    const H = .95, ob = mesh(withH(new THREE.CylinderGeometry(.06, .14, H, 4).toNonIndexed()), glass, 0, y + H/2, 0); ob.rotation.y = Math.PI/4; g.add(ob);
+    const tip = mesh(withH(new THREE.ConeGeometry(.06*Math.SQRT2*.72, .18, 4).toNonIndexed()), glass, 0, y + H + .09, 0); tip.rotation.y = Math.PI/4; g.add(tip);
+    const blue = new THREE.MeshBasicMaterial({color:new THREE.Color(.5, .9, 2.2)});
+    for (const ry of [0, Math.PI]){ const f = new THREE.Mesh(lightningGeo(new THREE.Vector3(0, y + .05, 0), new THREE.Vector3(0, y + H, 0), 820 + ry, .04, 10), blue);
+      f.position.z = Math.cos(ry)*.072; f.scale.set(1, 1, .01); g.add(f); }
+    g.add(at(glowSprite(C('#4a8aff'), .5, .35), 0, y + H*.5, .1));
+    const sp = []; for (let i=0;i<10;i++){ const a = i/10*Math.PI*2, c = new THREE.ConeGeometry(.03, .14 + (i%2)*.08, 4); c.deleteAttribute('uv'); const o = withH(c.toNonIndexed()); xf(o, {y:.07}); xf(o, {rz:-.6}); xf(o, {x:.16, y:y}); xf(o, {ry:-a}); sp.push(o); }
+    g.add(mesh(mergeGeometries(sp), glass));
+    g.add(at(glowSprite(C('#ffc040'), .9, .18), 0, y + H*.6, -.1));
+    for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + .6, b = new THREE.Mesh(lightningGeo(new THREE.Vector3(Math.cos(a)*.08, y + .5 + i*.1, Math.sin(a)*.08), new THREE.Vector3(Math.cos(a)*.5, y + .7 + i*.12, Math.sin(a)*.5), 800+i, .12, 7), ribbonMat('#ffd060')); g.add(b); anims.push({o:b, kind:'flicker', phase:i*1.3}); }
+    g.add(pool(C('#4a7aff'), .9, .25)); return {g, top:y + H*.8, anims}; },
+};
+Object.assign(FORMS, NEWFORMS, NEWFORMS2);
+NEWFORMS2.obsidian = function(){
+  // Obsidian: a tall crystal of black volcanic glass veined with cyan light, a crown of black shards splaying round its foot,
+  // set in a cup of broken rock over rippling cyan water, glass splinters drifting and cyan arcs crackling round it
+  const g = new THREE.Group(), anims = [];
+  const black = crysMat('#020206', '#1c1a34', '#5af0ff', {glow:1.15}), shardM = crysMat('#010104', '#14122a', '#7a9aff', {glow:.9});
+  for (const [r, op] of [[.5, .45], [.4, .55], [.3, .4]]) g.add(runeCircle(r, '#5af0ff', 'ring', op));
+  const rocks = []; for (let i=0;i<11;i++){ const a = i/11*Math.PI*2, b = roughBlock(.11, .07 + (i%3)*.03, .09, 860+i, .3); xf(b, {rz:-.5, x:.2}); xf(b, {ry:-a}); rocks.push(b); }
+  g.add(mesh(mergeGeometries(rocks), glowStone('#08080c', '#5af0ff', .45)));
+  // the main crystal, faceted and leaning slightly, with a bright facet near its tip
+  const main = obelisk(.12, .95, 870, false); xf(main, {rz:.04, y:.04});
+  const crown = [];
+  for (let i=0;i<9;i++){ const a = i/9*Math.PI*2 + .3, len = .28 + (i%3)*.1, o = obelisk(len*.16, len, 880+i, false); xf(o, {rz:-(.45 + (i%2)*.2)}); xf(o, {x:.08, y:.03}); xf(o, {ry:-a}); crown.push(o); }
+  g.add(new THREE.Mesh(main, black)); g.add(new THREE.Mesh(mergeGeometries(crown), shardM));
+  g.add(at(starSprite('#e8f8ff', .3, .8), .02, .98, .1));
+  // cyan veins: a fissure of light up the front of the crystal
+  const vein = new THREE.Mesh(lightningGeo(new THREE.Vector3(0, .12, .11), new THREE.Vector3(.01, .85, .07), 890, .04, 10), new THREE.MeshBasicMaterial({color:new THREE.Color(.4, 1.8, 2.2)})); g.add(vein);
+  g.add(at(glowSprite(C('#3ae0ff'), .7, .3), 0, .2, 0));
+  // splinters of glass drifting round it
+  const drift = new THREE.Group(); drift.position.y = .55; g.add(drift);
+  for (let i=0;i<7;i++){ const a = i/7*Math.PI*2, s = mesh(withH(new THREE.OctahedronGeometry(.025, 0).toNonIndexed()), black, Math.cos(a)*.36, (i%3)*.15 - .1, Math.sin(a)*.36); s.scale.y = 2; drift.add(s); }
+  anims.push({o:drift, kind:'spin', speed:.4});
+  // cyan arcs crackling out from the crystal
+  for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + .5, b = new THREE.Mesh(lightningGeo(new THREE.Vector3(Math.cos(a)*.08, .4 + i*.1, Math.sin(a)*.08), new THREE.Vector3(Math.cos(a)*.5, .65 + i*.1, Math.sin(a)*.5), 900+i, .12, 7), ribbonMat('#6af0ff')); g.add(b); anims.push({o:b, kind:'flicker', phase:i*1.3}); }
+  g.add(pool(C('#2ad0ff'), 1, .3));
+  return {g, top:.8, anims}; };
+Object.assign(FORMS, {obsidian:NEWFORMS2.obsidian});
 function buildForm(key, d){ const fam = famOf(key), t = (key.match(/(\d)$/) || [0, 1])[1] | 0, f = FORMS[fam] || FORMS[key];
   const r = f(t || 1, d); r.anims = r.anims || []; return r; }
 
@@ -745,6 +932,8 @@ function proto(key){
     else p = buildDesign(key, d);
   } catch(err){ console.error('3D model failed for', key, err); p = buildRock(3); }
   p.g.traverse(o => { if (o.isMesh && !(o.material.blending === THREE.AdditiveBlending) && !o.material.transparent){ o.castShadow = true; o.receiveShadow = true; } });
+  if (DEFS[key] && DEFS[key].kind==='special'){ const solid = []; p.g.traverse(o => { if (o.isMesh && o.geometry.attributes.normal && !o.material.transparent && o.material.blending !== THREE.AdditiveBlending && !(o.material.uniforms && o.material.uniforms.cDeep) && !(o.geometry.type || '').startsWith('Plane') && !(o.geometry.type || '').startsWith('Circle')) solid.push(o); });
+    for (const o of solid){ const ol = new THREE.Mesh(o.geometry, OUTLINE); ol.renderOrder = -1; ol.castShadow = false; ol.userData.outline = true; o.add(ol); } }
   protos.set(key, p); return p; }
 function instance(key){ const p = proto(key), g = p.g.clone(true);
   const inst = {g, top:p.top, embers:p.embers, sparkle:p.sparkle, anim:null, anims:[]};
@@ -757,7 +946,7 @@ function instance(key){ const p = proto(key), g = p.g.clone(true);
 /* ================= static world ================= */
 let tilesMesh, pathMesh = null, pathKey = null, hoverPath = null, hoverPathKey = null, flyLine, hl, selFrame, rangeRing, auraRings = [], portal, arrows = [], castleFlag;
 function buildWorld(){
-  scene.add(new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.ShaderMaterial({ side:THREE.BackSide, depthWrite:false, fog:false,
+  scene.add(skyMesh = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.ShaderMaterial({ side:THREE.BackSide, depthWrite:false, fog:false,
     uniforms:{top:{value:new THREE.Color('#2f6fd8')}, mid:{value:new THREE.Color('#7fb8f2')}, bot:{value:new THREE.Color('#e6f2ff')}},
     vertexShader:`varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
     fragmentShader:`uniform vec3 top, mid, bot; varying vec3 vP; void main(){ float h = vP.y; vec3 c = h > .08 ? mix(mid, top, smoothstep(.08,.6,h)) : mix(bot, mid, smoothstep(-.05,.08,h)); gl_FragColor = vec4(c,1.); }` })));
@@ -765,7 +954,8 @@ function buildWorld(){
   sun = new THREE.DirectionalLight(0xfff0d4, 2.7); sun.position.set(-18, 30, 12); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
   Object.assign(sun.shadow.camera, {left:-24, right:24, top:24, bottom:-24, near:1, far:90}); scene.add(sun);
-  scene.add(new THREE.HemisphereLight(0xd6e8ff, 0x6a6048, .95));
+  scene.add(hemi = new THREE.HemisphereLight(0xd6e8ff, 0x6a6048, .95));
+  buildStars();
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({map:grassTex, roughness:.95}));
   ground.rotation.x = -Math.PI/2; ground.position.y = -.7; ground.receiveShadow = true; scene.add(ground);
@@ -1071,6 +1261,31 @@ function tick(){
 }
 
 /* ================= start / stop ================= */
+/* ---------- look: day or night, and painted outlines ---------- */
+let skyMesh, hemi, grade, starPts, look = 'day';
+const OUTLINE = new THREE.ShaderMaterial({ side:THREE.BackSide, uniforms:{w:{value:.0016}, c:{value:new THREE.Color(0x0a0812)}},
+  vertexShader:`uniform float w; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vec3 n = normalize(normalMatrix*normal); mv.xyz += n*w*(-mv.z); gl_Position = projectionMatrix*mv; }`,
+  fragmentShader:`uniform vec3 c; void main(){ gl_FragColor = vec4(c, 1.); }` });
+const GRADE = { uniforms:{tDiffuse:{value:null}, amt:{value:1}},
+  vertexShader:`varying vec2 u; void main(){ u = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader:`uniform sampler2D tDiffuse; uniform float amt; varying vec2 u; void main(){ vec4 c = texture2D(tDiffuse, u);
+    float l = dot(c.rgb, vec3(.299,.587,.114)); c.rgb = mix(vec3(l), c.rgb, 1.25);                  // richer colour
+    c.rgb = mix(c.rgb, c.rgb*vec3(.85,.9,1.12), .35*amt);                                          // cool shadows
+    float v = smoothstep(.95, .3, length(u - .5)*1.3); c.rgb *= mix(1., v, .55*amt);               // vignette
+    gl_FragColor = c; }` };
+function buildStars(){ const n = 900, pos = new Float32Array(n*3), r = mkRng(91);
+  for (let i=0;i<n;i++){ const a = r()*Math.PI*2, y = .08 + r()*.92, k = Math.sqrt(1 - y*y); pos.set([Math.cos(a)*k*280, y*280, Math.sin(a)*k*280], i*3); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  starPts = new THREE.Points(g, new THREE.PointsMaterial({color:0xdfe8ff, size:1.6, sizeAttenuation:false, fog:false, transparent:true, opacity:.85})); starPts.visible = false; scene.add(starPts); }
+const LOOKS = {
+  day:  {top:'#2f6fd8', mid:'#7fb8f2', bot:'#e6f2ff', fog:0xbcd6f0, fogN:60, fogF:170, sun:0xfff0d4, sunI:2.7, hemiS:0xd6e8ff, hemiG:0x6a6048, hemiI:.95, exp:1.12, bloom:[.6, .5, .82], tile:0xffffff, grade:true, gradeAmt:.35, stars:false},
+  night:{top:'#05061a', mid:'#1a1a48', bot:'#3a2a5a', fog:0x14122e, fogN:40, fogF:140, sun:0x8aa0ff, sunI:.75, hemiS:0x4a5aa8, hemiG:0x1a1428, hemiI:.65, exp:1.05, bloom:[.9, .55, .55], tile:0x9090b0, grade:true, stars:true} };
+export function setLook(l){ look = LOOKS[l] ? l : 'day'; if (!built) return; const L = LOOKS[look], u = skyMesh.material.uniforms;
+  u.top.value.set(L.top); u.mid.value.set(L.mid); u.bot.value.set(L.bot); scene.fog.color.set(L.fog); scene.fog.near = L.fogN; scene.fog.far = L.fogF;
+  sun.color.set(L.sun); sun.intensity = L.sunI; hemi.color.set(L.hemiS); hemi.groundColor.set(L.hemiG); hemi.intensity = L.hemiI;
+  renderer.toneMappingExposure = L.exp; [bloom.strength, bloom.radius, bloom.threshold] = L.bloom; grade.enabled = L.grade; grade.uniforms.amt.value = L.gradeAmt ?? 1; starPts.visible = L.stars;
+  tilesMesh.material.color.set(L.tile); }
+export function setOutline(on){ OUTLINE.visible = !!on; }
 let built = false, cored = false;
 // the renderer, reflections, textures and materials: shared by the board and the tower portraits
 function core(){ if (cored) return; cored = true;
@@ -1125,13 +1340,13 @@ export function start(el, anchor){
     Object.assign(controls, {enableDamping:true, dampingFactor:.08, screenSpacePanning:false, minDistance:6, maxDistance:70, minPolarAngle:.15, maxPolarAngle:1.18, zoomSpeed:1.1, keyPanSpeed:22});
     controls.listenToKeyEvents(window);   // arrow keys pan; letters stay with the game's hotkeys
     composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
-    bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .38, .45, .92); composer.addPass(bloom); composer.addPass(new OutputPass());
+    bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .38, .45, .92); composer.addPass(bloom); grade = new ShaderPass(GRADE); grade.enabled = false; composer.addPass(grade); composer.addPass(new OutputPass());
     makeParticles(); buildWorld(); fitCamera();
     labels = document.createElement('div'); labels.className = 'labels3d';
     canvas.addEventListener('pointermove', onMove); canvas.addEventListener('pointerleave', () => { G.input.leave(); hideTip(); });
     canvas.addEventListener('pointerdown', onDown); canvas.addEventListener('pointerup', onUp);
     canvas.addEventListener('contextmenu', ev => ev.preventDefault());
-    built = true; window.__view3d = {camera, controls};   // handy from the console
+    built = true; window.__view3d = {camera, controls}; setLook(look);   // handy from the console
   }
   host.insertBefore(labels, anchor.nextSibling); host.insertBefore(canvas, anchor.nextSibling);
   viewSize = {w:0, h:0}; running = true; lastS = undefined; clock.getDelta(); tick();
