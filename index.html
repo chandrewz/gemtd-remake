@@ -2772,6 +2772,14 @@ function miniSprite(key){
   const d = DEFS[key], tall = d.kind!=='gem' && key!=='rock';
   const W = tall ? 84 : 64, H = tall ? 112 : 64, id = `${key}@${DPR}`;
   const c = document.createElement('canvas'); c.width = W*DPR; c.height = H*DPR; c.style.width = W+'px'; c.style.height = H+'px';
+  // a 3D portrait not yet rendered is drawn a frame or so later, so a tab full of new pictures opens at once
+  if (!portraits.has(id) && view3d.mod){ miniQueue.push(() => drawMini(c, key, id)); if (miniQueue.length === 1) requestAnimationFrame(runMiniQueue); return c; }
+  drawMini(c, key, id); return c;
+}
+const miniQueue = [];
+function runMiniQueue(){ const t0 = performance.now(); while (miniQueue.length && performance.now() - t0 < 24) miniQueue.shift()(); if (miniQueue.length) requestAnimationFrame(runMiniQueue); }
+function drawMini(c, key, id){
+  const d = DEFS[key], tall = d.kind!=='gem' && key!=='rock';
   const g = c.getContext('2d');
   if (!portraits.has(id) && view3d.mod){ try { const p = view3d.mod.portrait(key==='rock' ? 'rock1' : key, c.height/2.45*2*(d.kind==='gem' ? 3.2 - d.q*.3 : 1)); p.p3d = true; portraits.set(id, p); } catch(e){ console.error(e); } }
   if (!portraits.has(id)){

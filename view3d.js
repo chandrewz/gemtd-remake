@@ -1073,11 +1073,8 @@ function buildRuins(){
     const add = (geo, mat, y) => { const m = new THREE.Mesh(geo, mat); m.position.y = y; m.castShadow = m.receiveShadow = true; g.add(m); return m; };
     add(new THREE.BoxGeometry(.9, .25, .9), mossy, .12); add(new THREE.CylinderGeometry(.3, .34, h, 14), stoneM, .25 + h/2);
     if (!broken) add(new THREE.BoxGeometry(.8, .2, .8), stoneM, .25 + h + .1); else { const chunk = add(new THREE.CylinderGeometry(.3, .3, .6, 14), stoneM, .2); chunk.rotation.z = Math.PI/2; chunk.position.x = .9; } return g; };
-  for (let i=0;i<26;i++){ const a = i/26*Math.PI*2 + r()*.1, d = 20.5 + r()*3.5, x = Math.cos(a)*d, z = Math.sin(a)*d; col(x, z, 1.5 + r()*2.5, r() < .45); ruinSpots.push([x, z, 1.3]); }
-  for (const a of [.6, 2.3, 3.9, 5.4]){ const d = 23, x = Math.cos(a)*d, z = Math.sin(a)*d, g = new THREE.Group(); ruinSpots.push([x, z, 2.6]); g.position.set(x, -.38, z); g.rotation.y = -a + Math.PI/2; scene.add(g);
-    for (const s of [-1,1]){ const p = new THREE.Mesh(new THREE.BoxGeometry(.7, 3.2, .7), stoneM); p.position.set(s*1.4, 1.6, 0); p.castShadow = true; g.add(p); }
-    const arc = new THREE.Mesh(new THREE.TorusGeometry(1.4, .32, 6, 20, Math.PI), stoneM); arc.position.y = 3.2; arc.castShadow = true; g.add(arc);
-    const glow = new THREE.Mesh(new THREE.CircleGeometry(1.1, 32), new THREE.MeshBasicMaterial({map:glowTex, color:0x6ad8ff, transparent:true, opacity:.25, blending:THREE.AdditiveBlending, depthWrite:false})); glow.position.y = 2.6; g.add(glow); }
+  for (let i=0;i<26;i++){ const a = i/26*Math.PI*2 + r()*.1, d = 20.5 + r()*3.5, x = Math.cos(a)*d, z = Math.sin(a)*d; const broken = r() < .45, h = 1.5 + r()*2.5; if (Math.max(Math.abs(x), Math.abs(z)) < GW/2 + 3.4) continue;   // none touching the board
+    col(x, z, h, broken); ruinSpots.push([x, z, 1.3]); }
   // cliffs and mesas on the horizon
   { const cliffM = new THREE.MeshStandardMaterial({vertexColors:true, roughness:.9, flatShading:true});
     for (let i=0;i<22;i++){ const a = i/22*Math.PI*2 + r()*.2, d = 55 + r()*35, h = 8 + r()*16, w = 6 + r()*8; const geo = rockGeo(1, 900 + i, 1); geo.scale(w, h, w*.8);

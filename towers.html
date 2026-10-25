@@ -1800,10 +1800,12 @@ const t0=performance.now(); (function tick(now){ if(!reduce) for(const f of live
 window.GemGame = { consts:{GW:1, GH:1, PORTAL:{x:0,y:0}, CASTLE:{x:0,y:0}, CPS:[], NOBUILD:new Uint8Array(1), IDX:(x,y)=>0, DEFS, GT, ARMOR, QN, RECIPES}, Tower3D, state:()=>null };
 import('./view3d.js').then(m => {
   live.length = 0;
-  for (const {cv, key, W, H} of pics){ let img; try { img = m.portrait(key, Math.max(W, H)*DPRG*(DEFS[key].kind==='gem' ? 3.2 - DEFS[key].q*.3 : 1.1)); } catch(e){ console.error(e); continue; }
+  const queue = pics.slice();   // a few pictures per frame, so the page stays responsive while they render
+  (function next(){ const t1 = performance.now(); while (queue.length && performance.now() - t1 < 24) one(queue.shift()); if (queue.length) requestAnimationFrame(next); })();
+  function one({cv, key, W, H}){ let img; try { img = m.portrait(key, Math.max(W, H)*DPRG*(DEFS[key].kind==='gem' ? 3.2 - DEFS[key].q*.3 : 1.1)); } catch(e){ console.error(e); return; }
     const d2 = img.getContext('2d').getImageData(0, 0, img.width, img.height).data; let x0 = img.width, y0 = img.height, x1 = 0, y1 = 0;
     for (let y=0;y<img.height;y++) for (let x=0;x<img.width;x++) if (d2[(y*img.width+x)*4+3] > 90){ if (x<x0) x0=x; if (x>x1) x1=x; if (y<y0) y0=y; if (y>y1) y1=y; }
-    if (x1 <= x0) continue;
+    if (x1 <= x0) return;
     const bw = x1-x0+1, bh = y1-y0+1, c = cv.getContext('2d'); c.setTransform(1,0,0,1,0,0); c.clearRect(0, 0, cv.width, cv.height);
     const pad = .06, k = Math.min(cv.width*(1-2*pad)/bw, cv.height*(1-2*pad)/bh); c.drawImage(img, x0, y0, bw, bh, (cv.width-bw*k)/2, (cv.height-bh*k)/2, bw*k, bh*k); }
 }).catch(e => console.error('3D models unavailable', e));
