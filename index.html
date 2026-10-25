@@ -485,22 +485,23 @@ const RANK_STEP = 10, RANK_MAX = 10, RANK_BONUS = .08;   // every 10 kills: +8% 
 const rankOf = t => Math.min(RANK_MAX, Math.floor(t.kills/RANK_STEP));
 
 // endless: after wave 50 the last nine waves repeat with compounding HP, rising armor and speed
-const ENDLESS_GROWTH = 1.12;
+const ENDLESS_GROWTH = 1.12, ENDLESS_BASE = 1.8;   // endless creeps start from wave 49's strength, then grow
 const ROMAN = n => ['','I','II','III','IV','V','VI','VII','VIII','IX','X'][n] || String(n);
 function endlessInfo(w){
   const m = DIFF[S.diff].hp, n = w-50, g = Math.pow(ENDLESS_GROWTH, n), cyc = Math.floor((n-1)/10)+2;
   if (w % 10 === 0){ const [hp,armor,type,speed] = WAVES[49];
     return {w, name:`${WNAMES[49]} ${ROMAN(cyc)}`, hp:Math.round(hp*m*g), armor:armor+Math.floor(n/5), type, speed:Math.min(380,speed+n), fly:false, count:1, boss:true, leak:100, bounty:50+w, mr:MRES[50] ?? MRES_BASE}; }
   const i = 40 + ((n-1)%10) % 9, [hp,armor,type,speed,fly] = WAVES[i];
-  return {w, name:`${WNAMES[i]} ${ROMAN(cyc)}`, hp:Math.round(hp*m*g), armor:armor+Math.floor(n/5), type, speed:Math.min(450,speed+n*2), fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:1+Math.floor(w/5), mr:MRES[i+1] ?? MRES_BASE};
+  return {w, name:`${WNAMES[i]} ${ROMAN(cyc)}`, hp:Math.round(hp*m*g*ENDLESS_BASE), armor:armor+Math.floor(n/5), type, speed:Math.min(450,speed+n*2), fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:1+Math.floor(w/5), mr:MRES[i+1] ?? MRES_BASE};
 }
+const BOSS_ADJ = {20:.75, 40:1.45};   // the wave 20 boss is eased; wave 40's row is light, so it is raised to match the waves around it
 function waveInfo(w){
   if (w > 50) return endlessInfo(w);
   const [hp,armor,type,speed,fly] = WAVES[w-1];
   const m = DIFF[S.diff].hp;
   const mr = MRES[w] ?? MRES_BASE;
   if (w === 50) return {w, name:WNAMES[49], hp:Math.round(hp*m), armor, type, speed, fly:false, count:1, boss:true, leak:100, bounty:0, mr};
-  if (w % 10 === 0) return {w, name:WNAMES[w-1], hp:Math.round(hp*(8 + (w/10-1)*4/3)*m*(w===20 ? .75 : 1)), armor:armor+2, type, speed:Math.round(speed*.85), fly:!!fly, count:1, boss:true, leak:10+w/2, bounty:20+w, mr};
+  if (w % 10 === 0) return {w, name:WNAMES[w-1], hp:Math.round(hp*(8 + (w/10-1)*4/3)*m*(BOSS_ADJ[w] ?? 1)), armor:armor+2, type, speed:Math.round(speed*.85), fly:!!fly, count:1, boss:true, leak:10+w/2, bounty:20+w, mr};
   return {w, name:WNAMES[w-1], hp:Math.round(hp*m), armor, type, speed, fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:1+Math.floor(w/5), mr};
 }
 
@@ -561,7 +562,7 @@ const LS_KEY = 'gemtd-web-best';
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.25k';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.25l';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
