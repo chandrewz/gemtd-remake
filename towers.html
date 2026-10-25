@@ -102,7 +102,7 @@ for (const t of TYPES) for (let q=1;q<=6;q++){
   if (t==='E'){ const [p,du,dps]=E_POISON[q-1]; d.poison = {pct:p, dur:du, dps}; }
   if (t==='O'){ const [p]=O_AURA[q-1]; d.spdAura = {pct:p, r:d.range}; }   // speed auras don't stack, so an opal's aura reaches as far as it attacks
   if (t==='R') d.splash = {r:R_SPLASH[q-1], pct:.5};
-  if (t==='S') d.frost = {pct:.2, dur:3};
+  if (t==='S') d.frost = {pct:[0,.1,.13,.16,.2,.25,.3][q], dur:[0,2,2,2.5,2.5,3,3][q]};
   if (t==='T') d.multi = T_MULTI[q-1];
   DEFS[d.key] = d;
 }
@@ -197,7 +197,7 @@ const RECIPES = [
 ];
 
 // chance-upgrade weights per level (Chipped..Great), and the cost to reach each level
-const CHANCE = [[100,0,0,0,0,0],[80,20,0,0,0,0],[70,20,10,0,0,0],[60,30,10,0,0,0],[50,30,10,10,0,0],
+const CHANCE = [[100,0,0,0,0,0],[80,20,0,0,0,0],[70,20,10,0,0,0],[60,20,20,0,0,0],[50,30,10,10,0,0],
                 [40,30,20,10,0,0],[30,30,20,20,0,0],[20,30,30,20,0,0],[10,20,30,30,10,0]];
 const CHANCE_COST = [20,50,80,110,140,170,200,230];
 

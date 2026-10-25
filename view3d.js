@@ -1255,9 +1255,11 @@ function tick(){
     const sel = S.sel && S.towers.includes(S.sel) ? S.sel : null;
     selFrame.visible = !!sel; rangeRing.visible = false; auraRings.forEach(r => r.visible = false);
     if (sel){ selFrame.position.set(wx(sel.x), .008, wz(sel.y)); const d = DEFS[sel.key];
-      if (sel.key !== 'rock' && d.dmg){ rangeRing.visible = true; rangeRing.position.set(wx(sel.x), .02, wz(sel.y)); rangeRing.scale.setScalar(G.U(d.range)*(1 + (sel.bRange||0))); rangeRing.children.forEach(m => m.material.color.set(d.color)); }
+      const sameAsAura = [d.spdAura, d.dmgAura, d.rangeAura, d.radslow, d.burn].some(x => x && x.r === d.range);
+      if (sel.key !== 'rock' && d.dmg && !sameAsAura){ rangeRing.visible = true; rangeRing.position.set(wx(sel.x), .02, wz(sel.y)); rangeRing.scale.setScalar(G.U(d.range)*(1 + (sel.bRange||0))); rangeRing.children.forEach(m => m.material.color.set(d.color)); }
       const auras = sel.key === 'rock' ? [] : [d.burn, d.radslow, d.spdAura, d.dmgAura, d.armorAura, d.rangeAura].filter(Boolean);
-      auras.forEach((a, i) => { let r = auraRings[i]; if (!r){ r = new THREE.Mesh(new THREE.RingGeometry(.98, 1, 128), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.6, depthWrite:false, side:THREE.DoubleSide})); r.rotation.x = -Math.PI/2; scene.add(r); auraRings[i] = r; }
+      auras.forEach((a, i) => { let r = auraRings[i]; if (!r){ { const segs = [], n = 48; for (let k=0;k<n;k++){ const g = new THREE.RingGeometry(.975, 1, 6, 1, k/n*Math.PI*2, Math.PI*2/n*.55); g.deleteAttribute('uv'); segs.push(g); }
+          r = new THREE.Mesh(mergeGeometries(segs), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.75, depthWrite:false, side:THREE.DoubleSide})); } r.rotation.x = -Math.PI/2; scene.add(r); auraRings[i] = r; }
         r.visible = true; r.position.set(wx(sel.x), .025 + i*.002, wz(sel.y)); r.scale.setScalar(G.U(a.r)); r.material.color.set(d.color); }); }
   } else if (lastS === null && towerObjs.size) clearDynamic();
 
