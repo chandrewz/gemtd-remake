@@ -341,7 +341,7 @@ const BASE = {
 };
 const E_POISON = [[.02,3,2],[.04,4,3],[.06,5,5],[.08,6,10],[.1,7,15],[.12,8,25]];     // slow, dur, dps
 const O_AURA   = [[.1,86],[.15,100],[.2,115],[.25,129],[.35,143],[.5,214]];         // attack speed, radius
-const R_SPLASH = [.7,.8,.9,1,1.1,1.2];
+const R_SPLASH = [.7,.8,.9,1,1.1,1.5], R_SPLASH_PCT = [.3,.3,.4,.4,.5,.5];
 const T_MULTI  = [3,3,4,4,5,7];
 
 const DEFS = {};
@@ -352,7 +352,7 @@ for (const t of TYPES) for (let q=1;q<=6;q++){
   if (t==='D') d.crit = {c:.25, m:2};
   if (t==='E'){ const [p,du,dps]=E_POISON[q-1]; d.poison = {pct:p, dur:du, dps}; }
   if (t==='O'){ const [p]=O_AURA[q-1]; d.spdAura = {pct:p, r:d.range}; }   // speed auras don't stack, so an opal's aura reaches as far as it attacks
-  if (t==='R') d.splash = {r:R_SPLASH[q-1], pct:.5};
+  if (t==='R') d.splash = {r:R_SPLASH[q-1], pct:R_SPLASH_PCT[q-1]};
   if (t==='S') d.frost = {pct:[0,.05,.1,.15,.2,.25,.3][q], dur:2};
   if (t==='T') d.multi = T_MULTI[q-1];
   DEFS[d.key] = d;
@@ -361,9 +361,9 @@ DEFS.rock = {key:'rock', kind:'rock', name:'Rock', tier:0};
 
 function sp(key, o){ DEFS[key] = Object.assign({key, kind:'special', air:true, ground:true, nd:1, dice:1, proj:13}, o); }
 // ---- tier 1-3 specials (Gem TD) ----
-sp('silver1',  {name:'Silver', tier:1, dtype:'S', color:'#cfd6e6', range:550, cd:1, dmg:19, dice:2, splash:{r:1.4,pct:.6,frost:true}, frost:{pct:.1,dur:2}, upg:{to:'silver2',cost:25}});
-sp('silver2',  {name:'Sterling Silver', tier:2, dtype:'S', color:'#e4e9f4', range:650, cd:1, dmg:39, dice:4, splash:{r:1.5,pct:.6,frost:true}, frost:{pct:.15,dur:2}, upg:{to:'silver3',cost:300}});
-sp('silver3',  {name:'Silver Knight', tier:3, dtype:'S', color:'#f4f7ff', range:750, cd:1, dmg:149, dice:10, splash:{r:2,pct:.7,frost:true}, frost:{pct:.2,dur:2}});
+sp('silver1',  {name:'Silver', tier:1, dtype:'S', color:'#cfd6e6', range:550, cd:1, dmg:19, dice:2, splash:{r:.9,pct:.3,frost:true}, frost:{pct:.1,dur:2}, upg:{to:'silver2',cost:25}});
+sp('silver2',  {name:'Sterling Silver', tier:2, dtype:'S', color:'#e4e9f4', range:650, cd:1, dmg:39, dice:4, splash:{r:1,pct:.3,frost:true}, frost:{pct:.15,dur:2}, upg:{to:'silver3',cost:300}});
+sp('silver3',  {name:'Silver Knight', tier:3, dtype:'S', color:'#f4f7ff', range:750, cd:1, dmg:149, dice:10, splash:{r:1.1,pct:.5,frost:true}, frost:{pct:.2,dur:2}});
 sp('malachite1',{name:'Malachite', tier:1, dtype:'E', color:'#1fbf8f', range:750, cd:.35, dmg:5, dice:1, multi:4, upg:{to:'malachite2',cost:25}});
 sp('malachite2',{name:'Vivid Malachite', tier:2, dtype:'E', color:'#29d9a0', range:800, cd:.35, dmg:10, dice:2, multi:5, upg:{to:'malachite3',cost:280}});
 sp('malachite3',{name:'Mighty Malachite', tier:3, dtype:'E', color:'#4dffc0', range:800, cd:.35, dmg:44, dice:4, multi:6});
@@ -388,26 +388,26 @@ sp('paraiba1', {name:'Paraiba Tourmaline', tier:1, dtype:'Q', color:'#33e0ff', r
 sp('paraiba2', {name:'Paraiba Tourmaline Facet', tier:2, dtype:'Q', color:'#6aeaff', range:850, cd:.75, dmg:25, dice:79, nd:5, armorAura:{amt:6,r:650,ground:true}, nova:{c:.2,dmg:250,r:2.2}});
 sp('blackopal1',{name:'Black Opal', tier:1, dtype:'O', color:'#7a5cff', range:800, cd:1, dmg:24, dice:1, dmgAura:{pct:.3,r:800}, upg:{to:'blackopal2',cost:300}});
 sp('blackopal2',{name:'Mystic Black Opal', tier:2, dtype:'O', color:'#9b84ff', range:1000, cd:1, dmg:49, dice:1, dmgAura:{pct:.3,r:1000}});
-sp('bloodstone1',{name:'Bloodstone', tier:1, dtype:'R', color:'#c3203f', range:700, cd:.5, dmg:67, dice:1, splash:{r:1.4,pct:.5}, burn:{dps:135,r:200}, upg:{to:'bloodstone2',cost:250}});
-sp('bloodstone2',{name:'Ancient Bloodstone', tier:2, dtype:'R', color:'#e0294d', range:700, cd:.8, dmg:81, dice:20, crit:{c:.15,m:3}, splash:{r:1.5,pct:.5}, burn:{dps:180,r:250}});
-sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:99, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.1,r:250,stack:true}, upg:{to:'yellowsapphire2',cost:250}});
-sp('yellowsapphire2',{name:'Star Yellow Sapphire', tier:2, dtype:'S', color:'#fff08a', range:850, cd:.8, dmg:179, dice:1, splash:{r:2.4,pct:1,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.1,r:300,stack:true}});
+sp('bloodstone1',{name:'Bloodstone', tier:1, dtype:'R', color:'#c3203f', range:700, cd:.5, dmg:67, dice:1, splash:{r:1.1,pct:.5}, burn:{dps:135,r:200}, upg:{to:'bloodstone2',cost:250}});
+sp('bloodstone2',{name:'Ancient Bloodstone', tier:2, dtype:'R', color:'#e0294d', range:700, cd:.8, dmg:81, dice:20, crit:{c:.15,m:3}, splash:{r:1.1,pct:.5}, burn:{dps:180,r:250}});
+sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:99, dice:1, splash:{r:1.1,pct:.4,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.1,r:250,stack:true}, upg:{to:'yellowsapphire2',cost:250}});
+sp('yellowsapphire2',{name:'Star Yellow Sapphire', tier:2, dtype:'S', color:'#fff08a', range:850, cd:.8, dmg:179, dice:1, splash:{r:1.1,pct:.4,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.1,r:300,stack:true}});
 sp('bryvx',    {name:'The Great Stone', tier:3, dtype:'X', color:'#ffffff', range:850, cd:.8, dmg:1500, dice:1, crit:{c:.3,m:3}, splash:{r:1.5,pct:.5}});
 // ---- rare one-shots (from the Dota 2 version): three Perfect gems placed in the same round ----
 sp('agate',    {name:'Agate', tier:3, rare:true, dtype:'E', color:'#5fd3a8', range:1100, cd:1, dmg:429, dice:1, multi:5});
 sp('obsidian', {name:'Obsidian', tier:3, rare:true, dtype:'S', color:'#6a5fa8', range:600, cd:1, dmg:819, dice:1, splash:{r:1.5,pct:.5,frost:true}, frost:{pct:.3,dur:2}});
 // ---- ultimates (Dota 2 GemTD style: final special + Perfect gems) ----
 // ---- ultimates: a fully upgraded special + two Great gems, OR a one-shot of Chipped–Perfect of one type ----
-sp('kohinoor',   {name:'Koh-i-Noor Diamond', tier:4, dtype:'X', color:'#fff3cc', range:950, cd:.55, dmg:520, dice:180, crit:{c:.3,m:3}, splash:{r:1.3,pct:.5}});
-sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', range:1100, cd:.8, dmg:380, dice:120, splash:{r:3,pct:1,frost:true}, frost:{pct:.3,dur:2}, radslow:{pct:.15,r:550,stack:true}, dmgAura:{pct:.3,r:230}, spdAura:{pct:.5,r:214}});
-sp('crownprince',{name:'Crown Prince Ruby', tier:4, dtype:'X', color:'#ff2e4d', range:800, cd:.6, dmg:260, dice:90, crit:{c:.2,m:3}, splash:{r:1.6,pct:.6}, burn:{dps:420,r:330}});
+sp('kohinoor',   {name:'Koh-i-Noor Diamond', tier:4, dtype:'X', color:'#fff3cc', range:950, cd:.55, dmg:520, dice:180, crit:{c:.3,m:3}, splash:{r:1.5,pct:.5}});
+sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', range:1100, cd:.8, dmg:380, dice:120, splash:{r:1.5,pct:.4,frost:true}, frost:{pct:.3,dur:2}, radslow:{pct:.15,r:550,stack:true}, dmgAura:{pct:.3,r:230}, spdAura:{pct:.5,r:214}});
+sp('crownprince',{name:'Crown Prince Ruby', tier:4, dtype:'X', color:'#ff2e4d', range:800, cd:.6, dmg:260, dice:90, crit:{c:.2,m:3}, splash:{r:1.5,pct:.6}, burn:{dps:420,r:330}});
 sp('plutonium',  {name:'Plutonium Core', tier:4, dtype:'X', color:'#b6ff2e', range:700, cd:.4, dmg:140, dice:40, multi:7, burn:{dps:520,r:300}, radslow:{pct:.2,r:300}});
 sp('cullinan',   {name:'Diamond Cullinan', tier:4, dtype:'X', color:'#f5fbff', range:900, cd:.9, dmg:900, dice:450, crit:{c:.3,m:3}});
 sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, dmgAura:{pct:.3,r:260}});
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
 sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
-sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:3,pct:0,frost:true}, frost:{pct:.3,dur:2}, magicAmp:{pct:.25,dur:4,r:1.75}});
+sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:1.5,pct:0,frost:true}, frost:{pct:.3,dur:2}, magicAmp:{pct:.25,dur:4,r:1.75}});
 
 // one fixed damage value per hit: the average of the old dice roll (crits stay random)
 // the board is smaller than the original Gem TD map, so every attack range is 10% shorter; auras and burns sized to
@@ -562,7 +562,7 @@ const LS_KEY = 'gemtd-web-best';
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.25o';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.25p';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
