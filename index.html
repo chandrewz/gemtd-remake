@@ -37,6 +37,7 @@ button.primary:hover:not(:disabled){background:#ffd677;border-color:#ffd677}
 button.on{border-color:var(--gold);color:var(--gold)}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:16px;max-width:1240px;margin:0 auto;align-items:start}
 .board-wrap{position:relative;min-width:0;display:flex;justify-content:center}
+@media (min-width:901px){.board-wrap{position:sticky;top:12px}}   /* the board stays put while the side panel grows and shrinks */
 .board-frame{position:relative;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--slate);box-shadow:0 20px 60px -30px #000}
 canvas#board{display:block;touch-action:manipulation;cursor:crosshair}
 .board3d{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;cursor:crosshair;touch-action:none}
