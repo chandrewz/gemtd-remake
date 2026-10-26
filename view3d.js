@@ -244,8 +244,8 @@ function obeliskCluster(q){
 function buildGem(t, q){
   const g = new THREE.Group(), col = new THREE.Color(CRYS[t][1]), cl = obeliskCluster(q);
   g.add(new THREE.Mesh(cl.geo, gemCrys(t, q)));
-  g.add(pool(col, .4 + q*.09, q<=2 ? .1 : .12 + q*.03));
-  g.add(at(glowSprite(col, .3 + q*.12, q<=2 ? .06 : .08 + q*.015), 0, cl.height*.3, 0));
+  g.add(pool(col, .4 + q*.09, q<=2 ? .06 : .07 + q*.02));
+  g.add(at(glowSprite(col, .3 + q*.12, q<=2 ? .03 : .04 + q*.008), 0, cl.height*.3, 0));
   return {g, top:cl.height*.8};
 }
 
@@ -1127,10 +1127,12 @@ function outerForest(y0, ok = () => true){ const r = mkRng(5), m4 = new THREE.Ma
     for (let i=0; i<12000 && oaks.length + pines.length < 1500; i++){ const x = (r()-.5)*130, z = (r()-.5)*130; if (!keep(x,z)) continue;
       const d = Math.max(Math.abs(x), Math.abs(z)); const dens = d < 21 ? .25 : d < 24 ? .7 : .95; if (r() > dens) continue;
       const cl = Math.sin(x*.21)*Math.cos(z*.17) + Math.sin((x+z)*.09); (cl > .3 ? pines : oaks).push([x, z, .85 + r()*.5]); }
+    const near = ([x,z]) => Math.max(Math.abs(x), Math.abs(z)) < 27;   // only trees the sun's shadow box reaches cast shadows
+    const build = (oaks, pines, close) => {
     const trunkGeo = new THREE.CylinderGeometry(.1,.16,1,6); trunkGeo.translate(0,.5,0);
     const trunkM = new THREE.MeshStandardMaterial({color:0x5c3f22, roughness:.9});
     const tr = new THREE.InstancedMesh(trunkGeo, trunkM, oaks.length + pines.length);
-    const leaves = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshStandardMaterial({roughness:.85, flatShading:true}), oaks.length*4);
+    const leaves = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, close ? 1 : 0), new THREE.MeshStandardMaterial({roughness:.85, flatShading:true}), oaks.length*4);
     const cone = new THREE.ConeGeometry(1, 1.4, 7); cone.translate(0,.7,0);
     const needles = new THREE.InstancedMesh(cone, new THREE.MeshStandardMaterial({roughness:.85, flatShading:true}), pines.length*3);
     oaks.forEach(([x,z,sc], i) => { m4.compose(p3.set(x,y0-.005,z), q.identity(), s3.set(sc, 1.1*sc, sc)); tr.setMatrixAt(i, m4);
@@ -1140,7 +1142,8 @@ function outerForest(y0, ok = () => true){ const r = mkRng(5), m4 = new THREE.Ma
     pines.forEach(([x,z,sc], j) => { const i = oaks.length + j; m4.compose(p3.set(x,y0-.005,z), q.identity(), s3.set(sc*.8, .9*sc, sc*.8)); tr.setMatrixAt(i, m4);
       for (let k=0;k<3;k++){ const w = (.75 - k*.2)*sc; q.setFromAxisAngle(up, r()*6); m4.compose(p3.set(x, y0 + (.6 + k*.62)*sc, z), q, s3.set(w, .8*sc, w)); needles.setMatrixAt(j*3+k, m4);
         col.setHSL(.33 + r()*.05, .4 + r()*.12, .17 + r()*.06 + k*.02); needles.setColorAt(j*3+k, col); } });
-    tr.castShadow = leaves.castShadow = needles.castShadow = true; leaves.receiveShadow = needles.receiveShadow = true; scene.add(tr, leaves, needles); }
+    tr.castShadow = leaves.castShadow = needles.castShadow = close; leaves.receiveShadow = needles.receiveShadow = true; scene.add(tr, leaves, needles); };
+    build(oaks.filter(near), pines.filter(near), true); build(oaks.filter(t => !near(t)), pines.filter(t => !near(t)), false); }
 }
 function buildAoe(){
   const r = mkRng(5), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3(), col = new THREE.Color(), up = new THREE.Vector3(0,1,0);
@@ -1254,19 +1257,34 @@ function makeCreep(e){
 /* ================= live sync with the game ================= */
 const towerObjs = new Map(), creepObjs = new Map(), projObjs = new Map(), seenFx = new WeakSet(), floaters = [];
 let lastS = null, shotGeo;
-function clearDynamic(){
-  for (const o of towerObjs.values()){ scene.remove(o.g); for (const k of ['frame','glint','burnRing']) if (o[k]) scene.remove(o[k]); } towerObjs.clear();
+function clearDynamic(){ if (rocks.meshes){ rocks.meshes.forEach(m => m.count = 0); rocks.sig = null; }
+  for (const o of towerObjs.values()){ scene.remove(o.g); for (const k of ['frame','glint','burnRing','plate']) if (o[k]) scene.remove(o[k]); } towerObjs.clear();
   for (const o of creepObjs.values()) scene.remove(o.g, o.bar); creepObjs.clear();
   for (const o of projObjs.values()) scene.remove(o.m); projObjs.clear();
   parts.length = 0; for (const f of floaters) f.el.remove(); floaters.length = 0; }
 function keyFor(t){ return t.key==='rock' ? 'rock' + (1 + t.id % 5) : t.key; }
+// every maze rock is drawn through five instanced meshes (one per rock shape), so a board full of rocks costs a handful of draw calls
+const rocks = {sig:null, meshes:null};
+function rockMeshes(){ if (rocks.meshes) return rocks.meshes;
+  rocks.meshes = [1,2,3,4,5].map(v => { const p = buildRock(v); p.g.updateMatrixWorld(true); const geos = [];
+    p.g.traverse(m => { if (m.isMesh){ const g = m.geometry.clone(); g.applyMatrix4(m.matrixWorld); geos.push(g); } });
+    const im = new THREE.InstancedMesh(mergeGeometries(geos), M.stone, GW*GH); im.count = 0; im.castShadow = im.receiveShadow = true; im.frustumCulled = false; scene.add(im); return im; });
+  return rocks.meshes; }
+function syncRocks(list){ const sig = list.map(t => t.id + ':' + t.x + ',' + t.y).join('|'); if (sig === rocks.sig) return; rocks.sig = sig;
+  const ms = rockMeshes(), m4 = new THREE.Matrix4(); ms.forEach(m => m.count = 0);
+  for (const t of list){ const im = ms[t.id % 5]; m4.makeScale(.85, .85, .85).setPosition(wx(t.x), 0, wz(t.y)); im.setMatrixAt(im.count++, m4); }
+  ms.forEach(m => m.instanceMatrix.needsUpdate = true); }
 function syncTowers(T, dt){
   const S = G.state(), seen = new Set();
+  const rockList = [];
   for (const t of S.towers){
+    if (t.key === 'rock'){ rockList.push(t); continue; }
     seen.add(t.id); let o = towerObjs.get(t.id); const k = keyFor(t);
-    if (!o || o.key !== k){ if (o) scene.remove(o.g); o = instance(k); o.key = k; o.g.position.set(wx(t.x), 0, wz(t.y)); o.g.userData.tid = t.id; o.g.traverse(m => m.userData.tid = t.id); scene.add(o.g); towerObjs.set(t.id, o); o.born = T; }
+    if (!o || o.key !== k){ if (o){ scene.remove(o.g); for (const x of ['frame','glint','burnRing','plate']) if (o[x]) scene.remove(o[x]); } o = instance(k); o.key = k; o.g.position.set(wx(t.x), 0, wz(t.y)); o.g.userData.tid = t.id; o.g.traverse(m => m.userData.tid = t.id); scene.add(o.g); towerObjs.set(t.id, o); o.born = T; }
     const age = T - o.born, s = age < .25 ? .5 + age*2 : 1; o.g.scale.setScalar(s * (o.key==='bryvx' ? 1 : DEFS[t.key] && DEFS[t.key].kind==='gem' ? 1.15 : 1));
     o.t = t;
+    if (!o.plate){ o.plate = new THREE.Mesh(new THREE.PlaneGeometry(.94,.94), new THREE.MeshBasicMaterial({color:new THREE.Color(DEFS[t.key].color || '#ffffff'), transparent:true, opacity:.32, depthWrite:false}));
+      o.plate.rotation.x = -Math.PI/2; o.plate.position.set(wx(t.x), .004, wz(t.y)); scene.add(o.plate); }
     // this round's gems: a thin grey frame; towers that can combine: a glint running round it
     if (t.draft || t.oneShot || t.flag){ if (!o.frame){ o.frame = new THREE.Mesh(new THREE.PlaneGeometry(.96,.96), new THREE.MeshBasicMaterial({map:frameTex, color:0xffd25a, transparent:true, opacity:.95, depthWrite:false})); o.frame.rotation.x = -Math.PI/2; o.frame.position.set(wx(t.x), .007, wz(t.y)); scene.add(o.frame);
       { const fill = new THREE.Mesh(new THREE.PlaneGeometry(.96,.96), new THREE.MeshBasicMaterial({color:0xffe9a0, transparent:true, opacity:.22, depthWrite:false})); fill.position.z = -.001; o.frame.add(fill); } } o.frame.visible = !!t.draft; }
@@ -1289,7 +1307,8 @@ function syncTowers(T, dt){
     if (o.embers && Math.random() < .2) emit(tmp.set(wx(t.x)+(Math.random()-.5)*.25, .7, wz(t.y)+(Math.random()-.5)*.25), new THREE.Color(1,.45+Math.random()*.3,.1), 1, .3, 1.1, .1, 3);
     if (o.sparkle && Math.random() < .08) emit(tmp.set(wx(t.x)+(Math.random()-.5)*.6, .4, wz(t.y)+(Math.random()-.5)*.6), new THREE.Color().setHSL(Math.random(), .8, .7), 1, .12, 1.6, .1, 6);
   }
-  for (const [id, o] of towerObjs) if (!seen.has(id)){ scene.remove(o.g); if (o.frame) scene.remove(o.frame); if (o.glint) scene.remove(o.glint); if (o.burnRing) scene.remove(o.burnRing); towerObjs.delete(id); } }
+  syncRocks(rockList);
+  for (const [id, o] of towerObjs) if (!seen.has(id)){ scene.remove(o.g); if (o.frame) scene.remove(o.frame); if (o.glint) scene.remove(o.glint); if (o.burnRing) scene.remove(o.burnRing); if (o.plate) scene.remove(o.plate); towerObjs.delete(id); } }
 function syncCreeps(T, dt){
   const S = G.state(), seen = new Set();
   for (const e of S.enemies){ if (e.dead) continue; seen.add(e.id); let o = creepObjs.get(e.id); if (!o){ o = makeCreep(e); creepObjs.set(e.id, o); }
@@ -1331,7 +1350,9 @@ function tileAt(ev){
   const hit = ray.intersectObjects(objs, true).find(h => h.object.userData.tid != null && !(h.object.material && h.object.material.blending === THREE.AdditiveBlending));
   if (hit){ const t = G.state().towers.find(t => t.id === hit.object.userData.tid); if (t) return {x:t.x, y:t.y, t}; }
   const p = new THREE.Vector3(); if (!ray.ray.intersectPlane(plane, p)) return null;
-  return {x:Math.floor(p.x + GW/2), y:Math.floor(p.z + GH/2)}; }
+  const x = Math.floor(p.x + GW/2), y = Math.floor(p.z + GH/2), S = G.state();
+  const t = S && x >= 0 && y >= 0 && x < GW && y < GH ? S.occ[IDX(x,y)] : null;
+  return t ? {x, y, t} : {x, y}; }
 let down = null;
 let tip = null, tipFor = null;
 function onMove(ev){ const c = tileAt(ev); if (c) G.input.hover(c.x, c.y); else G.input.leave();
@@ -1419,7 +1440,7 @@ function buildStars(){ const n = 900, pos = new Float32Array(n*3), r = mkRng(91)
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   starPts = new THREE.Points(g, new THREE.PointsMaterial({color:0xdfe8ff, size:1.6, sizeAttenuation:false, fog:false, transparent:true, opacity:.85})); starPts.visible = false; scene.add(starPts); }
 const LOOKS = {
-  day:  {top:'#2f6fd8', mid:'#7fb8f2', bot:'#e6f2ff', fog:0xbcd6f0, fogN:60, fogF:170, sun:0xfff0d4, sunI:2.7, hemiS:0xd6e8ff, hemiG:0x6a6048, hemiI:.95, exp:1.12, bloom:[.6, .5, .82], tile:0xffffff, grade:true, gradeAmt:.35, stars:false},
+  day:  {top:'#2f6fd8', mid:'#7fb8f2', bot:'#e6f2ff', fog:0xbcd6f0, fogN:60, fogF:170, sun:0xfff0d4, sunI:2.7, hemiS:0xd6e8ff, hemiG:0x6a6048, hemiI:.95, exp:1.05, bloom:[.32, .45, .9], tile:0xc6c8cf, grade:true, gradeAmt:.35, stars:false},
   aoe:  {top:'#5d8fd0', mid:'#a9c8e6', bot:'#e8eedc', fog:0xc9d6c4, fogN:55, fogF:150, sun:0xffe0ae, sunI:2.9, hemiS:0xdfe8f0, hemiG:0x5d6a30, hemiI:1.0, exp:1.0, bloom:[.3, .45, .92], tile:0xffffff, grade:true, gradeAmt:.25, stars:false},
   night:{top:'#05061a', mid:'#1a1a48', bot:'#3a2a5a', fog:0x14122e, fogN:40, fogF:140, sun:0x8aa0ff, sunI:.75, hemiS:0x4a5aa8, hemiG:0x1a1428, hemiI:.65, exp:1.05, bloom:[.9, .55, .55], tile:0x9090b0, grade:true, stars:true} };
 export function setLook(l){ look = LOOKS[l] ? l : 'day'; if (AOE && look === 'day') look = 'aoe'; if (!built) return; const L = LOOKS[look], u = skyMesh.material.uniforms;
@@ -1432,7 +1453,7 @@ let built = false, cored = false;
 // the renderer, reflections, textures and materials: shared by the board and the tower portraits
 function core(){ if (cored) return; cored = true;
   renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
   canvas = renderer.domElement; canvas.className = 'board3d';
@@ -1496,6 +1517,6 @@ export function start(el, anchor){
 export function stop(){ hideTip(); running = false; cancelAnimationFrame(raf); if (canvas && canvas.parentNode) canvas.remove(); if (labels && labels.parentNode) labels.remove(); clearDynamic(); lastS = undefined; }
 export function resetView(){ if (built) fitCamera(); }
 export function setQuality(q){ if (!built) return; const hi = q !== 'low';
-  renderer.setPixelRatio(hi ? Math.min(devicePixelRatio, 2) : 1); viewSize = {w:0, h:0};
+  renderer.setPixelRatio(hi ? Math.min(devicePixelRatio, 1.5) : 1); viewSize = {w:0, h:0};
   if (renderer.shadowMap.enabled !== hi){ renderer.shadowMap.enabled = hi; sun.castShadow = hi; scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); }); }
   bloom.enabled = hi; }
