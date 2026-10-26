@@ -1373,7 +1373,7 @@ function tick(){
   const hv = G.hover();
   if (S && hv && S.phase === 'build'){ hl.visible = true; hl.position.set(wx(hv.x), .006, wz(hv.y)); const c = hv.ok ? 0x5fd38d : 0xff5d73; hl.material.color.set(c); hl.userData.edge.material.color.set(c); }
   else hl.visible = false;
-  const hr = S && hv && hv.ok && S.phase === 'build' ? hv.route : null;
+  const hr = S && G.ui.showPath && hv && hv.ok && S.phase === 'build' ? hv.route : null;
   if (hr !== hoverPathKey){ disposeMesh(hoverPath); hoverPath = hr ? lineTube(hr.pts, .08, .03, 0x5fd38d, .7, false) : null; if (hoverPath) scene.add(hoverPath); hoverPathKey = hr; }
 
   if (S){

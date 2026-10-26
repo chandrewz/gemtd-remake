@@ -806,7 +806,7 @@ const effArmor = e => e.armor - (e.shred && e.shred.t>0 ? e.shred.amt : 0) - e.a
 
 function hurt(e, amt, t, dot){
   if (e.dead || amt<=0) return;
-  const before = e.hp; e.hp -= amt; if (!dot) e.hitT = .12;
+  const before = e.hp; e.hp -= amt;   // creeps no longer flash white when hit
   if (t) t.dmg += Math.min(amt, before);
   if (e.hp <= 0){
     e.dead = true; S.totalKills++;
@@ -2644,7 +2644,7 @@ function frame(){
     ctx.fillStyle = hover.ok ? 'rgba(95,211,141,.22)' : 'rgba(255,93,115,.25)';
     ctx.fillRect(hover.x*CS, hover.y*CS, CS, CS);
     ctx.strokeStyle = hover.ok ? '#5fd38d' : '#ff5d73'; ctx.lineWidth = 1.5; ctx.strokeRect(hover.x*CS+.75, hover.y*CS+.75, CS-1.5, CS-1.5);
-    if (hover.ok && hover.route){
+    if (hover.ok && hover.route && ui.showPath){
       ctx.save(); ctx.beginPath(); hover.route.pts.forEach((p,i)=> i? ctx.lineTo(p.x*CS,p.y*CS) : ctx.moveTo(p.x*CS,p.y*CS));
       ctx.strokeStyle='rgba(95,211,141,.35)'; ctx.lineWidth=Math.max(1,CS*.08); ctx.setLineDash([CS*.2,CS*.2]); ctx.stroke(); ctx.restore();
     }
