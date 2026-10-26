@@ -245,7 +245,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <div class="setrow" id="camRow"><div><b>3D camera</b><small>Drag to pan, right-drag to rotate, scroll to zoom, arrow keys to move.</small></div><button id="camReset">Reset camera</button></div>
       <div class="setrow"><div><b>Auto-upgrade</b><small>Spends gold for you as soon as you can afford it: tower upgrades and gem chance levels, cheapest first.</small></div><div class="seg"><button data-auto="1" id="aOn">On</button><button data-auto="0" id="aOff">Off</button></div></div>
       <div class="setrow"><div><b>Game speed</b><small>Hotkeys 1, 2, 4 and 8.</small></div><div class="seg"><button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button><button id="sp8">8×</button></div></div>
-      <div class="setrow"><div><b>Show path during waves</b><small>The path always shows while you build. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
+      <div class="setrow"><div><b>Show path</b><small>The route creeps will walk. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
       <div class="setrow keysrow"><div><b>Hotkeys</b><p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Towers · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> <kbd>8</kbd> Speed · <kbd>Esc</kbd> Deselect</p></div></div>
       <div class="setrow" id="linkRow" hidden><div><b>More</b><small>Opens in a new tab.</small></div><div class="seg"><button id="lbBtn">Leaderboard</button><button id="galBtn">Tower gallery</button></div></div>
     </div>
@@ -2587,7 +2587,7 @@ function frame(){
   }
 
   // route
-  if (S.route && (ui.showPath || S.phase!=='wave')){
+  if (S.route && ui.showPath){
     ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round';
     const pts = S.route.pts;
     ctx.beginPath(); pts.forEach((p,i)=> i? ctx.lineTo(p.x*CS,p.y*CS) : ctx.moveTo(p.x*CS,p.y*CS));
@@ -2655,10 +2655,11 @@ function frame(){
   if (sel && sel.key!=='rock'){
     const d = DEFS[sel.key], cx=(sel.x+.5)*CS, cy=(sel.y+.5)*CS;
     ctx.strokeStyle = '#f2c35b'; ctx.lineWidth = 2; ctx.strokeRect(sel.x*CS+1, sel.y*CS+1, CS-2, CS-2);
-    if (d.dmg && ![d.spdAura, d.dmgAura, d.rangeAura, d.radslow, d.burn].some(x => x && x.r === d.range)){ ctx.beginPath(); ctx.arc(cx,cy,U(d.range)*(1+(sel.bRange||0))*CS,0,Math.PI*2); ctx.fillStyle = hexA(d.color,.07); ctx.fill(); ctx.strokeStyle = hexA(d.color,.7); ctx.lineWidth = 1.5; ctx.stroke(); }
+    if (d.dmg){ ctx.beginPath(); ctx.arc(cx,cy,U(d.range)*(1+(sel.bRange||0))*CS,0,Math.PI*2); ctx.fillStyle = 'rgba(95,211,141,.06)'; ctx.fill(); ctx.strokeStyle = 'rgba(95,211,141,.8)'; ctx.lineWidth = 1; ctx.stroke(); }
     const auras = [d.burn, d.radslow, d.spdAura, d.dmgAura, d.armorAura, d.rangeAura].filter(Boolean);
     ctx.save(); ctx.setLineDash([4,4]);
-    for (const a of auras){ ctx.beginPath(); ctx.arc(cx,cy,U(a.r)*CS,0,Math.PI*2); ctx.strokeStyle = hexA(d.color,.8); ctx.lineWidth=1.2; ctx.stroke(); if(!d.dmg){ ctx.fillStyle=hexA(d.color,.06); ctx.fill(); } }
+    const rr = d.dmg ? U(d.range)*(1+(sel.bRange||0))*CS : -1;
+    for (const a of auras){ const ar = U(a.r)*CS; ctx.beginPath(); ctx.arc(cx,cy,Math.abs(ar-rr) < 1 ? ar-3 : ar,0,Math.PI*2); ctx.strokeStyle = 'rgba(242,195,91,.9)'; ctx.lineWidth=1; ctx.stroke(); if(!d.dmg){ ctx.fillStyle='rgba(242,195,91,.05)'; ctx.fill(); } }
     ctx.restore();
   } else if (sel && sel.key==='rock'){
     ctx.strokeStyle = '#f2c35b'; ctx.lineWidth = 2; ctx.strokeRect(sel.x*CS+1, sel.y*CS+1, CS-2, CS-2);
@@ -3092,7 +3093,7 @@ function setSpeed(v){ if (!S) return; S.speed = v; [1,2,4,8].forEach(k=>$('sp'+k
 function togglePause(){ if (!S) return; S.paused = !S.paused; $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause'; $('pauseBtn').classList.toggle('on', S.paused); }
 $('pauseBtn').onclick = togglePause;
 [1,2,4,8].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
-function togglePath(){ ui.showPath = !ui.showPath; renderSettings(); toast(ui.showPath ? 'Path shown during waves' : 'Path hidden during waves'); }
+function togglePath(){ ui.showPath = !ui.showPath; renderSettings(); toast(ui.showPath ? 'Path shown' : 'Path hidden'); }
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
 $('linkRow').hidden = !submitRepo();
