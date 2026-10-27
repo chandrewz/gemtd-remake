@@ -122,9 +122,9 @@ sp('starruby3',{name:'Fire Star', tier:3, dtype:'R', color:'#ff7a2b', dmg:0, ran
 sp('jade1',    {name:'Jade', tier:1, dtype:'Q', color:'#5ad19a', range:800, cd:.5, dmg:34, dice:6, poison:{pct:.06,dur:5,dps:5}, upg:{to:'jade2',cost:240}});
 sp('jade2',    {name:'Asian Jade', tier:2, dtype:'Q', color:'#6fe0ad', range:800, cd:.45, dmg:79, dice:6, poison:{pct:.08,dur:6,dps:10}, upg:{to:'jade3',cost:250}});
 sp('jade3',    {name:'Lucky Asian Jade', tier:3, dtype:'Q', color:'#8effc4', range:850, cd:.35, dmg:74, dice:6, poison:{pct:.1,dur:7,dps:15}, goldChance:.01, rangeAura:{pct:.15,r:150}});
-sp('redcrystal1',{name:'Red Crystal', tier:1, dtype:'A', color:'#ff6b8b', range:1300, cd:.8, dmg:59, dice:26, ground:false, armorAura:{amt:4,r:800,air:true}, upg:{to:'redcrystal2',cost:240}});
-sp('redcrystal2',{name:'Red Crystal Facet', tier:2, dtype:'A', color:'#ff8aa3', range:1400, cd:.8, dmg:104, dice:26, ground:false, armorAura:{amt:6,r:850,air:true}, upg:{to:'redcrystal3',cost:240}});
-sp('redcrystal3',{name:'Rose Quartz Crystal', tier:3, dtype:'A', color:'#ffb0c4', range:1500, cd:.75, dmg:149, dice:26, ground:false, armorAura:{amt:8,r:900,air:true}});
+sp('redcrystal1',{name:'Red Crystal', tier:1, dtype:'A', color:'#ff6b8b', range:1300, cd:.8, dmg:59, dice:26, ground:false, armorAura:{amt:4,r:800,air:true,slow:.15}, upg:{to:'redcrystal2',cost:240}});
+sp('redcrystal2',{name:'Red Crystal Facet', tier:2, dtype:'A', color:'#ff8aa3', range:1400, cd:.8, dmg:104, dice:26, ground:false, armorAura:{amt:6,r:850,air:true,slow:.2}, upg:{to:'redcrystal3',cost:240}});
+sp('redcrystal3',{name:'Rose Quartz Crystal', tier:3, dtype:'A', color:'#ffb0c4', range:1500, cd:.75, dmg:149, dice:26, ground:false, armorAura:{amt:8,r:900,air:true,slow:.25}});
 sp('darkemerald1',{name:'Dark Emerald', tier:1, dtype:'E', color:'#118a55', range:550, cd:.8, dmg:89, dice:61, stun:{c:.125,dur:1.5}, upg:{to:'darkemerald2',cost:250}});
 sp('darkemerald2',{name:'Enchanted Emerald', tier:2, dtype:'E', color:'#16b06c', range:700, cd:.7, dmg:98, dice:51, nd:2, crit:{c:.15,m:4}, stun:{c:.15,dur:2}});
 sp('gold1',    {name:'Gold', tier:1, dtype:'A', color:'#ffcf4a', range:800, cd:1, dmg:159, dice:31, crit:{c:.25,m:2}, shred:{amt:5,dur:5}, upg:{to:'gold2',cost:240}});
@@ -133,8 +133,8 @@ sp('uranium1', {name:'Uranium 238', tier:1, dtype:'T', color:'#9dff4a', dmg:0, r
 sp('uranium2', {name:'Uranium 235', tier:2, dtype:'T', color:'#c2ff5c', dmg:0, range:0, burn:{dps:300,r:275}});
 sp('pinkdiamond1',{name:'Pink Diamond', tier:1, dtype:'D', color:'#ff9ad5', range:800, cd:.75, dmg:149, dice:26, air:false, crit:{c:.1,m:5}, upg:{to:'pinkdiamond2',cost:240}});
 sp('pinkdiamond2',{name:'Great Pink Diamond', tier:2, dtype:'D', color:'#ffb8e3', range:850, cd:.6, dmg:204, dice:51, air:false, crit:{c:.1,m:8}});
-sp('paraiba1', {name:'Paraiba Tourmaline', tier:1, dtype:'Q', color:'#33e0ff', range:850, cd:.75, dmg:5, dice:79, nd:5, armorAura:{amt:4,r:600,ground:true}, nova:{c:.2,dmg:200,r:2}, upg:{to:'paraiba2',cost:350}});
-sp('paraiba2', {name:'Paraiba Tourmaline Facet', tier:2, dtype:'Q', color:'#6aeaff', range:850, cd:.75, dmg:25, dice:79, nd:5, armorAura:{amt:6,r:650,ground:true}, nova:{c:.2,dmg:250,r:2.2}});
+sp('paraiba1', {name:'Paraiba Tourmaline', tier:1, dtype:'Q', color:'#33e0ff', range:850, cd:.75, dmg:50, dice:79, nd:5, armorAura:{amt:4,r:600,ground:true}, upg:{to:'paraiba2',cost:350}});
+sp('paraiba2', {name:'Paraiba Tourmaline Facet', tier:2, dtype:'Q', color:'#6aeaff', range:850, cd:.75, dmg:90, dice:79, nd:5, armorAura:{amt:6,r:650,ground:true}});
 sp('blackopal1',{name:'Black Opal', tier:1, dtype:'O', color:'#7a5cff', range:800, cd:1, dmg:24, dice:1, dmgAura:{pct:.2,r:800}, spdAura:{pct:.35,r:800}, upg:{to:'blackopal2',cost:300}});
 sp('blackopal2',{name:'Mystic Black Opal', tier:2, dtype:'O', color:'#9b84ff', range:1000, cd:1, dmg:49, dice:1, dmgAura:{pct:.3,r:1000}, spdAura:{pct:.35,r:1000}});
 sp('bloodstone1',{name:'Bloodstone', tier:1, dtype:'R', color:'#c3203f', range:700, cd:.5, dmg:67, dice:1, splash:{r:1.1,pct:.5}, burn:{dps:135,r:200}, upg:{to:'bloodstone2',cost:250}});
@@ -154,9 +154,9 @@ sp('plutonium',  {name:'Plutonium Core', tier:4, dtype:'X', color:'#b6ff2e', ran
 sp('cullinan',   {name:'Diamond Cullinan', tier:4, dtype:'X', color:'#f5fbff', range:900, cd:.9, dmg:900, dice:450, crit:{c:.3,m:3}});
 sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, dmgAura:{pct:.3,r:260}});
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
-sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}});
+sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}, armorAura:{amt:8,r:900,air:true,slow:.25}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
-sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:1.5,pct:0,frost:true}, frost:{pct:.3,dur:2}, magicAmp:{pct:.25,dur:4,r:1.5}});
+sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range:800, cd:1, dmg:150, dice:50, splash:{r:1.5,pct:0,frost:true}, frost:{pct:.3,dur:2}, magicAmp:{pct:.25,dur:4,r:1.5}, armorAura:{amt:6,r:650,ground:true}});
 
 // one fixed damage value per hit: the average of the old dice roll (crits stay random)
 // the board is smaller than the original Gem TD map, so every attack range is 10% shorter; auras and burns sized to
@@ -1736,8 +1736,7 @@ function abilities(d){
   if (d.magicAmp) a.push(`Hits make enemies within ${d.magicAmp.r} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
   if (d.dmgAura) a.push(`Aura: +${pct(d.dmgAura.pct)} damage to towers within ${tiles(d.dmgAura.r)} tiles`);
   if (d.rangeAura) a.push(`Aura: +${pct(d.rangeAura.pct)} attack range to towers within ${tiles(d.rangeAura.r)} tiles`);
-  if (d.armorAura) a.push(`Aura: −${d.armorAura.amt} armor to ${d.armorAura.air&&d.armorAura.ground?'all enemies':d.armorAura.air?'flyers':'ground units'} within ${tiles(d.armorAura.r)} tiles`);
-  if (d.nova) a.push(`${pct(d.nova.c)} chance to cast a ${d.nova.dmg}-damage frost nova`);
+  if (d.armorAura) a.push(`Aura: −${d.armorAura.amt} armor${d.armorAura.slow?` and ${pct(d.armorAura.slow)} slow`:''} to ${d.armorAura.air&&d.armorAura.ground?'all enemies':d.armorAura.air?'flyers':'ground units'} within ${tiles(d.armorAura.r)} tiles`);
   if (d.goldChance) a.push(`${pct(d.goldChance)} chance per hit to find gold`);
   return a;
 }
