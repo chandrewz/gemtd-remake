@@ -148,11 +148,11 @@ sp('obsidian', {name:'Obsidian', tier:3, rare:true, dtype:'S', color:'#6a5fa8', 
 // ---- ultimates (Dota 2 GemTD style: final special + Perfect gems) ----
 // ---- ultimates: a fully upgraded special + two Great gems, OR a one-shot of Chipped–Perfect of one type ----
 sp('kohinoor',   {name:'Koh-i-Noor Diamond', tier:4, dtype:'X', color:'#fff3cc', range:950, cd:.55, dmg:520, dice:180, crit:{c:.3,m:3}, splash:{r:1.5,pct:.5}});
-sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', range:1100, cd:.8, dmg:380, dice:120, splash:{r:1.5,pct:.4,frost:true}, frost:{pct:.3,dur:2}, radslow:{pct:.25,r:550,stack:true}, dmgAura:{pct:.3,r:230}, spdAura:{pct:.5,r:214}});
+sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', range:1100, cd:.8, dmg:380, dice:120, splash:{r:1.5,pct:.4,frost:true}, frost:{pct:.3,dur:2}, radslow:{pct:.25,r:450,stack:true}, dmgAura:{pct:.3,r:230}, spdAura:{pct:.5,r:214}});
 sp('crownprince',{name:'Crown Prince Ruby', tier:4, dtype:'X', color:'#ff2e4d', range:800, cd:.6, dmg:260, dice:90, crit:{c:.2,m:3}, splash:{r:1.5,pct:.6}, burn:{dps:420,r:330}});
 sp('plutonium',  {name:'Plutonium Core', tier:4, dtype:'X', color:'#b6ff2e', range:700, cd:.4, dmg:140, dice:40, multi:7, burn:{dps:520,r:300}, radslow:{pct:.2,r:300}});
 sp('cullinan',   {name:'Diamond Cullinan', tier:4, dtype:'X', color:'#f5fbff', range:900, cd:.9, dmg:900, dice:450, crit:{c:.3,m:3}});
-sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, dmgAura:{pct:.3,r:260}});
+sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, spdAura2:{pct:.5,r:1050}, dmgAura:{pct:.3,r:900}});
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
 sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}, armorAura:{amt:8,r:900,air:true,slow:.25}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
@@ -163,7 +163,7 @@ sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range
 // match a tower's range (Opals, Star Ruby) shrink with it
 const RANGE_SCALE = .9;
 for (const d of Object.values(DEFS)) if (d.range){ const r0 = d.range; d.range = Math.round(r0*RANGE_SCALE);
-  for (const k of ['spdAura','dmgAura','rangeAura','burn','radslow','armorAura']) if (d[k] && d[k].r === r0) d[k].r = d.range; }
+  for (const k of ['spdAura','spdAura2','dmgAura','rangeAura','burn','radslow','armorAura']) if (d[k] && d[k].r === r0) d[k].r = d.range; }
 for (const d of Object.values(DEFS)) if (d.dmg) d.hit = Math.round(d.dmg + d.nd*(d.dice+1)/2);
 const fmtHit = d => d.hit.toLocaleString();
 
@@ -1732,6 +1732,7 @@ function abilities(d){
   if (d.burn) a.push(`Burns enemies for ${d.burn.dps}/s within ${tiles(d.burn.r)} tiles (magic)`);
   if (d.radslow) a.push(`Slows enemies ${pct(d.radslow.pct)} within ${tiles(d.radslow.r)} tiles`);
   if (d.spdAura) a.push(`Aura: +${pct(d.spdAura.pct)} attack speed to towers within ${tiles(d.spdAura.r)} tiles${d.spdAura.stack?' (adds on top of other opal auras)':' (highest speed aura applies)'}`);
+  if (d.spdAura2) a.push(`Aura: +${pct(d.spdAura2.pct)} attack speed to towers within ${tiles(d.spdAura2.r)} tiles (highest speed aura applies)`);
   if (d.magic) a.push('Magic damage: ignores armor');
   if (d.magicAmp) a.push(`Hits make enemies within ${d.magicAmp.r} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
   if (d.dmgAura) a.push(`Aura: +${pct(d.dmgAura.pct)} damage to towers within ${tiles(d.dmgAura.r)} tiles`);

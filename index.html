@@ -37,6 +37,8 @@ button.primary:hover:not(:disabled){background:#ffd677;border-color:#ffd677}
 button.on{border-color:var(--gold);color:var(--gold)}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:16px;max-width:1240px;margin:0 auto;align-items:start}
 .board-wrap{position:relative;min-width:0;display:flex;justify-content:center}
+.pray{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);display:grid;gap:6px}.pray h3{margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut,#9aa3b8);font-weight:600}.pray .hint{margin:0}
+.pray-lv{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.pray-lv button{padding-inline:4px}.pray .dot,.pray-on i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}.pray-on{margin:0;font-size:13px}
 @media (min-width:901px){.board-wrap{position:sticky;top:12px}}   /* the board stays put while the side panel grows and shrinks */
 .board-frame{position:relative;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--slate);box-shadow:0 20px 60px -30px #000}
 canvas#board{display:block;touch-action:manipulation;cursor:crosshair}
@@ -400,11 +402,11 @@ sp('obsidian', {name:'Obsidian', tier:3, rare:true, dtype:'S', color:'#6a5fa8', 
 // ---- ultimates (Dota 2 GemTD style: final special + Perfect gems) ----
 // ---- ultimates: a fully upgraded special + two Great gems, OR a one-shot of Chipped–Perfect of one type ----
 sp('kohinoor',   {name:'Koh-i-Noor Diamond', tier:4, dtype:'X', color:'#fff3cc', range:950, cd:.55, dmg:520, dice:180, crit:{c:.3,m:3}, splash:{r:1.5,pct:.5}});
-sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', range:1100, cd:.8, dmg:380, dice:120, splash:{r:1.5,pct:.4,frost:true}, frost:{pct:.3,dur:2}, radslow:{pct:.25,r:550,stack:true}, dmgAura:{pct:.3,r:230}, spdAura:{pct:.5,r:214}});
+sp('starsapphire',{name:'Star Sapphire', tier:4, dtype:'X', color:'#6aa0ff', range:1100, cd:.8, dmg:380, dice:120, splash:{r:1.5,pct:.4,frost:true}, frost:{pct:.3,dur:2}, radslow:{pct:.25,r:450,stack:true}, dmgAura:{pct:.3,r:230}, spdAura:{pct:.5,r:214}});
 sp('crownprince',{name:'Crown Prince Ruby', tier:4, dtype:'X', color:'#ff2e4d', range:800, cd:.6, dmg:260, dice:90, crit:{c:.2,m:3}, splash:{r:1.5,pct:.6}, burn:{dps:420,r:330}});
 sp('plutonium',  {name:'Plutonium Core', tier:4, dtype:'X', color:'#b6ff2e', range:700, cd:.4, dmg:140, dice:40, multi:7, burn:{dps:520,r:300}, radslow:{pct:.2,r:300}});
 sp('cullinan',   {name:'Diamond Cullinan', tier:4, dtype:'X', color:'#f5fbff', range:900, cd:.9, dmg:900, dice:450, crit:{c:.3,m:3}});
-sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, dmgAura:{pct:.3,r:260}});
+sp('opalnebula', {name:'Opal Nebula', tier:4, dtype:'X', color:'#ffc6e6', range:1200, cd:1, dmg:120, dice:20, spdAura:{pct:1,r:260,stack:true}, spdAura2:{pct:.5,r:1050}, dmgAura:{pct:.3,r:900}});
 // Dota 2 GemTD "Burned": huge slow hits, full magic damage around the target
 sp('wingsstone', {name:'Wings of Topaz', tier:4, dtype:'X', color:'#ffd84a', range:600, cd:1.5, dmg:900, dice:1, magic:true, splash:{r:1.5,pct:1}, armorAura:{amt:8,r:900,air:true,slow:.25}});
 // Dota 2 GemTD "Freezing Cold": every hit slows everything around the target by 75% for 3s
@@ -415,7 +417,7 @@ sp('starofadam', {name:'Star of Adam', tier:4, dtype:'X', color:'#2fdc9a', range
 // match a tower's range (Opals, Star Ruby) shrink with it
 const RANGE_SCALE = .9;
 for (const d of Object.values(DEFS)) if (d.range){ const r0 = d.range; d.range = Math.round(r0*RANGE_SCALE);
-  for (const k of ['spdAura','dmgAura','rangeAura','burn','radslow','armorAura']) if (d[k] && d[k].r === r0) d[k].r = d.range; }
+  for (const k of ['spdAura','spdAura2','dmgAura','rangeAura','burn','radslow','armorAura']) if (d[k] && d[k].r === r0) d[k].r = d.range; }
 for (const d of Object.values(DEFS)) if (d.dmg) d.hit = Math.round(d.dmg + d.nd*(d.dice+1)/2);
 const fmtHit = d => d.hit.toLocaleString();
 
@@ -563,14 +565,14 @@ const LS_KEY = 'gemtd-web-best';
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.27a';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.27b';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
 const rGem = () => S.rngGem(), rHit = () => S.rngHit();
 function newGame(diff, seed){
   S = {diff, wave:1, gold:0, lives:START_LIVES, chance:0, phase:'build', placed:0, towers:[], occ:new Array(GW*GH).fill(null),
-       draft:[], repicks:0, enemies:[], projs:[], fx:[], spawnLeft:0, spawnT:0, waveLeaks:0, waveCur:null, sel:null,
+       draft:[], repicks:0, lastType:null, prayType:null, prayQ:0, enemies:[], projs:[], fx:[], spawnLeft:0, spawnT:0, waveLeaks:0, waveCur:null, sel:null,
        speed:1, paused:false, nextId:1, route:null, totalKills:0, time:0, started:true, auraDirty:true,
        seed: (seed ?? (Math.random()*4294967296)>>>0), tick:0, acc:0, rec:[], t0:Date.now(), tainted:false};
   S.rngGem = mkRng(S.seed); S.rngHit = mkRng(S.seed ^ 0x9E3779B9);
@@ -594,6 +596,8 @@ function applyAction(a){   // returns true if the action was legal and took effe
   else if (op==='u'){ if (t) upgradeTower(t); }
   else if (op==='g') buyChance();
   else if (op==='x'){ if (t && t.key==='rock') removeRock(t); }
+  else if (op==='y') prayColor();
+  else if (op==='l') prayLevel(n);
   return S.rec.length > before;
 }
 // replay a recorded run from scratch, headless. Returns what the run actually achieved.
@@ -649,18 +653,32 @@ function canPlace(x,y){
   return {ok:true, route:r};
 }
 function rollGem(){
-  const type = TYPES[(rGem()*8)|0];
+  let type = TYPES[(rGem()*8)|0];
+  if (S.prayType && rGem() < PRAY_COLOR_PCT) type = S.prayType;
   const w = CHANCE[S.chance]; let r = rGem()*100, q = 1;
   for (let i=0;i<6;i++){ if (r < w[i]){ q=i+1; break; } r -= w[i]; }
+  if (S.prayQ && rGem() < PRAY_LV[S.prayQ].pct) q = Math.max(q, S.prayQ);
   return type+q;
 }
+/* ---------- prayers: before the round's first gem, pay to steer this round's five gems ---------- */
+const PRAY_COLOR_PCT = .7, PRAY_LV = {3:{cost:100, pct:.75}, 4:{cost:200, pct:.5}, 5:{cost:400, pct:.25}};
+const prayColorCost = () => 30 + 3*S.wave;
+const prayOpen = () => S.phase==='build' && S.placed===0;
+function prayColor(){
+  if (!prayOpen() || !S.lastType || S.prayType) return; const cost = prayColorCost(); if (S.gold < cost) return;
+  S.gold -= cost; S.prayType = S.lastType; rec('y');
+  log(`Prayed for <b>${GT[S.prayType].name}</b>: each gem this round is ${Math.round(PRAY_COLOR_PCT*100)}% likely to be one.`); ui.dirty = true; }
+function prayLevel(q){
+  const P = PRAY_LV[q]; if (!P || !prayOpen() || S.prayQ || S.gold < P.cost) return;
+  S.gold -= P.cost; S.prayQ = q; rec('l', null, null, q);
+  log(`Prayed for <b>${QN[q]}</b>: each gem this round is ${Math.round(P.pct*100)}% likely to be ${QN[q]} or better.`); ui.dirty = true; }
 function placeGem(x,y){
   if (S.phase!=='build') return;
   const c = canPlace(x,y);
   if (!c.ok){ toast(c.why, true); return; }
   if (c.rock){ S.towers.splice(S.towers.indexOf(c.rock),1); S.occ[IDX(x,y)] = null; }
   const key = rollGem();
-  const t = addTower(x,y,key,true);
+  const t = addTower(x,y,key,true); S.lastType = DEFS[key].type;
   S.draft.push(t); S.placed++; S.route = c.route; S.sel = t; rec('p',x,y);
   burst(x+.5,y+.5,DEFS[key].color,10);
   if (DEFS[key].q>=5) log(`Rolled a <b>${DEFS[key].name}</b>!`);
@@ -773,7 +791,7 @@ function endWave(){
   if (S.waveLeaks===0){ const b = 5+S.wave; S.gold += b; log(`Wave ${S.wave} cleared with no leaks. <b>+${b} gold</b>.`); }
   else log(`Wave ${S.wave} over. ${S.waveLeaks} creep${S.waveLeaks>1?'s':''} reached the castle.`);
   if (S.wave===50){ log(`<b>The Gem Eater is slain.</b> Endless waves begin: every wave from here grows ${Math.round((ENDLESS_GROWTH-1)*100)}% stronger.`); toast('Wave 50 cleared · endless mode'); }
-  S.wave++; S.phase='build'; S.placed=0; S.repicks=0; S.projs.length=0;
+  S.wave++; S.phase='build'; S.placed=0; S.repicks=0; S.projs.length=0; S.prayType=null; S.prayQ=0;
   saveBest();
   ui.dirty = true;
 }
@@ -784,11 +802,12 @@ function endWave(){
 function recomputeAuras(){
   for (const t of S.towers){ t.bSpd = 0; t.bDmg = 0; t.bRange = 0; t.auraIn = []; t.auraOut = 0; }
   for (const a of S.towers){
-    const d = DEFS[a.key]; if (!d.spdAura && !d.dmgAura && !d.rangeAura) continue;
+    const d = DEFS[a.key]; if (!d.spdAura && !d.spdAura2 && !d.dmgAura && !d.rangeAura) continue;
     for (const t of S.towers){
       if (t.key==='rock') continue;
       const dist = Math.hypot(a.x-t.x, a.y-t.y); let hit = false;
       if (d.spdAura && dist <= U(d.spdAura.r)){ t.auraIn.push({src:a, kind:'spd', pct:d.spdAura.pct, stack:!!d.spdAura.stack}); hit = true; }
+      if (d.spdAura2 && dist <= U(d.spdAura2.r)){ t.auraIn.push({src:a, kind:'spd', pct:d.spdAura2.pct, stack:false}); hit = true; }
       if (d.dmgAura && dist <= U(d.dmgAura.r)){ t.bDmg = Math.max(t.bDmg, d.dmgAura.pct); t.auraIn.push({src:a, kind:'dmg', pct:d.dmgAura.pct}); hit = true; }  // damage auras: highest only
       if (d.rangeAura && dist <= U(d.rangeAura.r)){ t.bRange = Math.max(t.bRange, d.rangeAura.pct); t.auraIn.push({src:a, kind:'range', pct:d.rangeAura.pct}); hit = true; }   // range auras: highest only
       if (hit && t!==a) a.auraOut++;
@@ -2653,7 +2672,7 @@ function frame(){
     const d = DEFS[sel.key], cx=(sel.x+.5)*CS, cy=(sel.y+.5)*CS;
     ctx.strokeStyle = '#f2c35b'; ctx.lineWidth = 2; ctx.strokeRect(sel.x*CS+1, sel.y*CS+1, CS-2, CS-2);
     if (d.dmg){ ctx.beginPath(); ctx.arc(cx,cy,U(d.range)*(1+(sel.bRange||0))*CS,0,Math.PI*2); ctx.fillStyle = 'rgba(95,211,141,.06)'; ctx.fill(); ctx.strokeStyle = 'rgba(95,211,141,.8)'; ctx.lineWidth = 1; ctx.stroke(); }
-    const auras = [d.burn, d.radslow, d.spdAura, d.dmgAura, d.armorAura, d.rangeAura].filter(Boolean);
+    const auras = [d.burn, d.radslow, d.spdAura, d.spdAura2, d.dmgAura, d.armorAura, d.rangeAura].filter(Boolean);
     ctx.save(); ctx.setLineDash([4,4]);
     const rr = d.dmg ? U(d.range)*(1+(sel.bRange||0))*CS : -1;
     for (const a of auras){ const ar = U(a.r)*CS; ctx.beginPath(); ctx.arc(cx,cy,Math.abs(ar-rr) < 1 ? ar-3 : ar,0,Math.PI*2); ctx.strokeStyle = 'rgba(242,195,91,.9)'; ctx.lineWidth=1; ctx.stroke(); if(!d.dmg){ ctx.fillStyle='rgba(242,195,91,.05)'; ctx.fill(); } }
@@ -2750,6 +2769,7 @@ function abilities(d){
   if (d.burn) a.push(`Burns enemies for ${d.burn.dps}/s within ${tiles(d.burn.r)} tiles (magic)`);
   if (d.radslow) a.push(`Slows enemies ${pct(d.radslow.pct)} within ${tiles(d.radslow.r)} tiles`);
   if (d.spdAura) a.push(`Aura: +${pct(d.spdAura.pct)} attack speed to towers within ${tiles(d.spdAura.r)} tiles${d.spdAura.stack?' (adds on top of other opal auras)':' (highest speed aura applies)'}`);
+  if (d.spdAura2) a.push(`Aura: +${pct(d.spdAura2.pct)} attack speed to towers within ${tiles(d.spdAura2.r)} tiles (highest speed aura applies)`);
   if (d.magic) a.push('Magic damage: ignores armor');
   if (d.magicAmp) a.push(`Hits make enemies within ${d.magicAmp.r} tiles take +${pct(d.magicAmp.pct)} magic damage for ${d.magicAmp.dur}s`);
   if (d.dmgAura) a.push(`Aura: +${pct(d.dmgAura.pct)} damage to towers within ${tiles(d.dmgAura.r)} tiles`);
@@ -2830,14 +2850,24 @@ function renderWave(){
     </div>
     <div class="eff">${strong.length?`Strong: <b>${strong.join(', ')}</b>`:''}${strong.length&&weak.length?' · ':''}${weak.length?`Weak: ${weak.join(', ')}`:''}</div>`;
 }
+function prayHtml(){
+  const open = prayOpen(), lt = S.lastType, cc = prayColorCost();
+  const colorPart = S.prayType ? `<p class="pray-on"><i style="background:${GT[S.prayType].color}"></i>Praying for <b>${GT[S.prayType].name}</b> · ${Math.round(PRAY_COLOR_PCT*100)}% of this round's gems</p>`
+    : `<button id="prayColor" ${!open||!lt||S.gold<cc?'disabled':''}>${lt?`<i class="dot" style="background:${GT[lt].color}"></i>Pray for ${GT[lt].name}`:'Pray for a colour'} · ${cc} gold</button>`;
+  const levelPart = S.prayQ ? `<p class="pray-on">Praying for <b>${QN[S.prayQ]}</b> or better · ${Math.round(PRAY_LV[S.prayQ].pct*100)}% of this round's gems</p>`
+    : `<div class="pray-lv">${[3,4,5].map(q=>`<button id="prayL${q}" ${!open||S.gold<PRAY_LV[q].cost?'disabled':''}>${QN[q]} · ${PRAY_LV[q].cost}</button>`).join('')}</div>`;
+  return `<div class="pray"><h3>Pray</h3><p class="hint">${open ? 'Before your first gem: the colour is your last gem placed.' : 'Prayers open before the first gem of each round.'}</p>${colorPart}${levelPart}</div>`; }
 function renderChance(){
   const el = $('chanceCard'); if (!S) return;
   const w = CHANCE[S.chance], cost = CHANCE_COST[S.chance];
   el.innerHTML = `<h2><span>Gem chances · level ${S.chance}/8</span></h2>
     <div class="chance-bar">${w.map((v,i)=> v?`<div style="width:${v}%;background:${QCOL[i+1]}" title="${QN[i+1]} ${v}%"></div>`:'').join('')}</div>
     <div class="chance-legend">${w.map((v,i)=> v?`<span><i style="background:${QCOL[i+1]}"></i>${QN[i+1]} ${v}%</span>`:'').join('')}</div>
-    ${S.chance<8 ? `<button id="chanceBtn" ${S.gold<cost?'disabled':''}>Upgrade chances for ${cost} gold <kbd>G</kbd></button>` : '<p class="hint">Chances are fully upgraded.</p>'}`;
+    ${S.chance<8 ? `<button id="chanceBtn" ${S.gold<cost?'disabled':''}>Upgrade chances for ${cost} gold <kbd>G</kbd></button>` : '<p class="hint">Chances are fully upgraded.</p>'}
+    ${prayHtml()}`;
   const b = $('chanceBtn'); if (b) b.onclick = buyChance;
+  const pc = $('prayColor'); if (pc) pc.onclick = prayColor;
+  for (const q of [3,4,5]){ const pb = $('prayL'+q); if (pb) pb.onclick = () => prayLevel(q); }
 }
 function renderInspector(){
   const el = $('inspector'); if (!S) return;
@@ -2892,7 +2922,7 @@ function renderInspector(){
     auraRows.push(`<div class="aura-total"><b>+${pct(t.bSpd)} attack speed</b></div>`); for (const x of [neb, reg]) if (x) auraRows.push(row(x)); }
   const dm = best('dmg'); if (dm) auraRows.push(`<div class="aura-total"><b>+${pct(t.bDmg)} damage</b></div>`, row(dm));
   const rg = best('range'); if (rg) auraRows.push(`<div class="aura-total"><b>+${pct(t.bRange)} range</b></div>`, row(rg));
-  const outLine = (d.spdAura||d.dmgAura||d.rangeAura) && t.auraOut ? `<div class="aura-row">Boosting ${t.auraOut} other tower${t.auraOut===1?'':'s'}</div>` : '';
+  const outLine = (d.spdAura||d.spdAura2||d.dmgAura||d.rangeAura) && t.auraOut ? `<div class="aura-row">Boosting ${t.auraOut} other tower${t.auraOut===1?'':'s'}</div>` : '';
   const auraHtml = (auraRows.length||outLine) ? `<div class="auras"><h2><span>Auras</span></h2>${auraRows.join('')}${outLine}</div>` : '';
   const uses = RECIPES.filter(R=>R.group!=='secret' && R.parts.includes(t.key));   // secret recipes stay secret
   const usesHtml = uses.length ? `<div class="uses"><h2><span>Used in</span></h2>${uses.map(R=>`<div><b>${DEFS[R.to].name}</b>${R.parts.map(p=>partChip(p, partState(p))).join('')}</div>`).join('')}</div>` : '';

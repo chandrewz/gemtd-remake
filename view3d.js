@@ -294,7 +294,7 @@ const hexOf = c => '#' + c.getHexString();
 function colourMat(hex, opts){ const c = new THREE.Color(hex), deep = c.clone().multiplyScalar(.16), hot = c.clone().lerp(new THREE.Color(1,1,1), .65); return crysMat(hexOf(deep), hex, hexOf(hot), opts); }
 function buildSpecial(key, d){
   const g = new THREE.Group(), T = tierOf(d), acc = accentTypes(key), rnd = mkRng(key.length*17 + T);
-  const frost = !!(d.frost || (d.splash && d.splash.frost)), burn = !!d.burn, aura = !!(d.dmgAura || d.spdAura || d.armorAura);
+  const frost = !!(d.frost || (d.splash && d.splash.frost)), burn = !!d.burn, aura = !!(d.dmgAura || d.spdAura || d.spdAura2 || d.armorAura);
   // plinth
   const trim = [null, M.bronze, M.silver, M.gold, M.gold][T], slab = T===4 ? M.marble : M.polish;
   let y = 0; const tier = (rt, rb, h, n, mat) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, n), mat); m.position.y = y + h/2; m.rotation.y = Math.PI/n; g.add(m); y += h; };
@@ -1405,7 +1405,7 @@ function tick(){
     if (sel){ selFrame.position.set(wx(sel.x), .008, wz(sel.y)); const d = DEFS[sel.key];
       if (sel.key !== 'rock' && d.dmg){ const rr = G.U(d.range)*(1 + (sel.bRange||0)); rangeRing.visible = true; rangeRing.position.set(wx(sel.x), .02, wz(sel.y));
         rangeRing.children[0].geometry = ringGeo(rr, false); rangeRing.children[1].scale.setScalar(rr); }
-      const auras = sel.key === 'rock' ? [] : [d.burn, d.radslow, d.spdAura, d.dmgAura, d.armorAura, d.rangeAura].filter(Boolean);
+      const auras = sel.key === 'rock' ? [] : [d.burn, d.radslow, d.spdAura, d.spdAura2, d.dmgAura, d.armorAura, d.rangeAura].filter(Boolean);
       auras.forEach((a, i) => { let r = auraRings[i]; if (!r){ r = new THREE.Mesh(ringGeo(1, true), new THREE.MeshBasicMaterial({color:AURA_COLOR, transparent:true, opacity:.9, depthWrite:false, side:THREE.DoubleSide})); r.rotation.x = -Math.PI/2; scene.add(r); auraRings[i] = r; }
         r.visible = true; r.position.set(wx(sel.x), .025 + i*.002, wz(sel.y)); const ar = G.U(a.r), rr = d.dmg ? G.U(d.range)*(1 + (sel.bRange||0)) : -1; r.geometry = ringGeo(Math.abs(ar - rr) < .05 ? ar - RING_W*1.6 : ar, true); }); }   // an aura as wide as the range sits just inside it
   } else if (lastS === null && towerObjs.size) clearDynamic();
