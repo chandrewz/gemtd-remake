@@ -99,7 +99,7 @@ const WNAMES = ['Frenzied Pig','Swift Frog','Sturdy Yak','Dusk Moth','Smart Robo
  'Ripper','Lockjaw','Trapjaw','Storm Gull','Machjaw','Skateboard Flamingo','Bookwyrm','Gilded Beetle','Rechargeable Shark','Elder Golem',
  'Ribboned Zombie','Sky Ray','Jumo','Baekho','Lilnova','Hoarfrost Owl','Azuremir','Shroomy','Furry Fish','Iron Colossus',
  'Boooofus','Crummy','Drodo','Ghost Wyvern','Obsidian Crab','Grave Knight','Cinder Hound','Thunder Roc','Ancient Tortoise','The Gem Eater'];
-const DIFF = {normal:{hp:.55,label:'50 waves + endless'}};
+const DIFF = {normal:{hp:.605,label:'50 waves + endless'}};
 const ENDLESS_GROWTH = 1.12, ENDLESS_BASE = 1.8;   // endless creeps start from wave 49's strength, then grow
 const ROMAN = n => ['','I','II','III','IV','V','VI','VII','VIII','IX','X'][n] || String(n);
 const bossBounty = w => Math.min(200, 50*(w/10)), creepBounty = w => w < 10 ? 1 : w < 20 ? 2 : w < 30 ? 5 : w < 40 ? 10 : w < 50 ? 15 : 20;
@@ -121,7 +121,7 @@ function waveInfo(w){
   return {w, name:WNAMES[w-1], hp:Math.round(hp*m), armor, type, speed, fly:!!fly, count:10, boss:false, leak:1+Math.floor(w/10), bounty:creepBounty(w), mr};
 }
 const START_LIVES = 50;
-const GAME_VERSION = '2026.10.28b';
+const GAME_VERSION = '2026.10.28c';
 const pct = v => Math.round(v*100) + '%';
 const fmt = n => n >= 1e6 ? (n/1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e4 ? Math.round(n/1e3) + 'k' : n.toLocaleString();
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
