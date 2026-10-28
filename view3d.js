@@ -101,6 +101,9 @@ function makeMaterials(){
   M.gold = new THREE.MeshStandardMaterial({color:0xe7b84c, metalness:1, roughness:.26, envMap:envTex});
   M.iron = new THREE.MeshStandardMaterial({color:0x5a606b, metalness:.85, roughness:.42, envMap:envTex});
   M.bronze = new THREE.MeshStandardMaterial({color:0xb37b40, metalness:1, roughness:.34, envMap:envTex});
+  M.sand = new THREE.MeshStandardMaterial({color:0xe2cc98, roughness:.72, map:stoneTex});
+  M.goldLit = new THREE.MeshStandardMaterial({color:0xffcc55, metalness:.5, roughness:.3, envMap:envTex, emissive:0x7a4e00, emissiveIntensity:.45});   // gold that stays bright away from the studio lights
+  M.lapis = new THREE.MeshStandardMaterial({color:0x1f47b8, metalness:.35, roughness:.28, envMap:envTex, emissive:0x0b2066, emissiveIntensity:.35});
   M.polish = new THREE.MeshPhysicalMaterial({color:0x262a35, roughness:.22, clearcoat:.9, clearcoatRoughness:.1, envMap:envTex, envMapIntensity:.7});
   M.marble = new THREE.MeshPhysicalMaterial({color:0xf2eee8, roughness:.18, clearcoat:.8, envMap:envTex, envMapIntensity:.6});
   M.glass = new THREE.MeshPhysicalMaterial({envMap:envTex, color:0x14111c, roughness:.03, metalness:.1, clearcoat:1, clearcoatRoughness:0, envMapIntensity:2.6, flatShading:true, sheen:1, sheenColor:new THREE.Color(0x5544aa)});
@@ -515,10 +518,17 @@ const FORMS = {
     g.add(pool(C('#3dff8a'), .7, .22)); return {g, top:h + .1, anims:[{o:gem, kind:'spin', speed:.8}]}; },
   gold(t){ const g = new THREE.Group();
     if (t===1){ g.add(mesh(roughBlock(.5, .16, .42, 3, .05), glowStone('#5a4a36', '#ffcf4a', .5))); g.add(coins(20, .2, 9)).children; const c = crystalFan(5, .5, .06, 1.3, colMat('#ffcf4a'), 21); c.position.y = .16; g.add(c); g.add(pool(C('#ffcf4a'), .8, .22)); return {g, top:.5}; }
-    g.add(mesh(new THREE.BoxGeometry(.62, .06, .62), glowStone('#6a5a40', '#ffdc73', .4), 0, .03, 0));
-    const pyr = mesh(withH(new THREE.ConeGeometry(.36, .62, 4).toNonIndexed()), glowStone('#c89a3a', '#fff0a0', .9), 0, .37, 0); pyr.rotation.y = Math.PI/4; g.add(pyr);
-    const cap = mesh(withH(new THREE.OctahedronGeometry(.07, 0).toNonIndexed()), colMat('#ffe08a'), 0, .74, 0); g.add(cap); g.add(at(starSprite('#ffe08a', .45, .8), 0, .74, 0));
-    g.add(coins(18, .4, 4)); g.add(pool(C('#ffdc73'), .9, .25)); return {g, top:.74, anims:[{o:cap, kind:'bob', amp:.025}]}; },
+    // Egyptian Gold: a stepped pyramid of polished gold banded with lapis, on a sandstone dais with four gold-tipped obelisks, a glowing pyramidion on top
+    g.add(mesh(new THREE.BoxGeometry(.68, .06, .68), M.sand, 0, .03, 0)); g.add(mesh(new THREE.BoxGeometry(.58, .05, .58), M.sand, 0, .085, 0));
+    g.add(mesh(new THREE.BoxGeometry(.6, .012, .6), M.goldLit, 0, .062, 0));
+    let y = .11;
+    for (let i=0;i<5;i++){ const w = .5 - i*.085; g.add(mesh(new THREE.BoxGeometry(w, .08, w), M.goldLit, 0, y + .04, 0)); y += .08;
+      if (i < 4){ g.add(mesh(new THREE.BoxGeometry(w - .03, .014, w - .03), M.lapis, 0, y + .007, 0)); y += .014; } }
+    const capGeo = withH(new THREE.ConeGeometry(.1, .18, 4).toNonIndexed()); capGeo.rotateY(Math.PI/4);
+    const cap = mesh(capGeo, colMat('#ffd24a', {glow:1.2}), 0, y + .09, 0); g.add(cap); g.add(at(starSprite('#fff0b0', .45, .7), 0, y + .18, 0));
+    for (const [sx, sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ g.add(mesh(new THREE.BoxGeometry(.045, .2, .045), M.sand, sx*.29, .21, sz*.29));
+      const tip = mesh(new THREE.ConeGeometry(.034, .05, 4), M.goldLit, sx*.29, .335, sz*.29); tip.rotation.y = Math.PI/4; g.add(tip); }
+    g.add(coins(16, .42, 4)); g.add(pool(C('#ffdc73'), .9, .18)); return {g, top:y + .18, anims:[{o:cap, kind:'bob', amp:.02}]}; },
   uranium(t){ const g = new THREE.Group(), n = 10, parts = [], h = t===1 ? .2 : .3;
     for (let i=0;i<n;i++){ const a = i/n*Math.PI*2; parts.push(xf(roughBlock(.11, h, .13, 60+i, .08), {x:Math.cos(a)*.22, z:Math.sin(a)*.22, ry:-a})); }
     g.add(new THREE.Mesh(mergeGeometries(parts), glowStone('#22281e', '#9dff4a', 1)));
