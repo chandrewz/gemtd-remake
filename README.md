@@ -1,6 +1,6 @@
 # Gem TD Remastered
 
-**[Play it here](https://chandrewz.github.io/gemtd-remastered/)** · [Leaderboard](https://chandrewz.github.io/gemtd-remastered/leaderboard.html) · [Tower gallery](https://chandrewz.github.io/gemtd-remastered/towers.html)
+**[Play it here](https://chandrewz.github.io/gemtd-remake/)** · [Leaderboard](https://chandrewz.github.io/gemtd-remake/leaderboard.html) · [Tower gallery](https://chandrewz.github.io/gemtd-remake/towers.html)
 
 A single-player web Gem TD that mixes the Warcraft III original, the Flash/iOS port and the Dota 2 version. Everything is static, so it runs on GitHub Pages. Scores are submitted as GitHub issues and checked by a bot before they reach the leaderboard.
 
