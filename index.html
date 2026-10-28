@@ -384,8 +384,8 @@ sp('jade3',    {name:'Lucky Asian Jade', tier:3, dtype:'Q', color:'#8effc4', ran
 sp('redcrystal1',{name:'Red Crystal', tier:1, dtype:'A', color:'#ff6b8b', range:1300, cd:.8, dmg:59, dice:26, ground:false, armorAura:{amt:4,r:800,air:true,slow:.15}, upg:{to:'redcrystal2',cost:210}});
 sp('redcrystal2',{name:'Red Crystal Facet', tier:2, dtype:'A', color:'#ff8aa3', range:1400, cd:.8, dmg:104, dice:26, ground:false, armorAura:{amt:6,r:850,air:true,slow:.2}, upg:{to:'redcrystal3',cost:220}});
 sp('redcrystal3',{name:'Rose Quartz Crystal', tier:3, dtype:'A', color:'#ffb0c4', range:1500, cd:.75, dmg:149, dice:26, ground:false, armorAura:{amt:8,r:900,air:true,slow:.25}});
-sp('darkemerald1',{name:'Dark Emerald', tier:1, dtype:'E', color:'#118a55', range:550, cd:.8, dmg:89, dice:61, stun:{c:.125,dur:1.5}, upg:{to:'darkemerald2',cost:250}});
-sp('darkemerald2',{name:'Enchanted Emerald', tier:2, dtype:'E', color:'#16b06c', range:700, cd:.7, dmg:98, dice:51, nd:2, crit:{c:.15,m:4}, stun:{c:.15,dur:2}});
+sp('darkemerald1',{name:'Dark Emerald', tier:1, dtype:'E', color:'#118a55', range:550, cd:.8, dmg:89, dice:61, stun:{c:.125,dur:1.5}, poison:{pct:.1,dur:7,dps:15}, upg:{to:'darkemerald2',cost:250}});
+sp('darkemerald2',{name:'Enchanted Emerald', tier:2, dtype:'E', color:'#16b06c', range:700, cd:.7, dmg:98, dice:51, nd:2, stun:{c:.15,dur:2}, poison:{pct:.1,dur:7,dps:15}});
 sp('gold1',    {name:'Gold', tier:1, dtype:'A', color:'#ffcf4a', range:800, cd:1, dmg:159, dice:31, crit:{c:.25,m:2}, shred:{amt:5,dur:5}, upg:{to:'gold2',cost:225}});
 sp('gold2',    {name:'Egyptian Gold', tier:2, dtype:'A', color:'#ffdc73', range:800, cd:.75, dmg:174, dice:41, crit:{c:.3,m:2}, shred:{amt:9,dur:5}, goldChance:.01});
 sp('uranium1', {name:'Uranium 238', tier:1, dtype:'T', color:'#9dff4a', range:600, cd:1, dmg:74, dice:1, multi:5, burn:{dps:150,r:200,solo:'uranium'}, upg:{to:'uranium2',cost:240}});
@@ -396,10 +396,10 @@ sp('paraiba1', {name:'Paraiba Tourmaline', tier:1, dtype:'Q', color:'#33e0ff', r
 sp('paraiba2', {name:'Paraiba Tourmaline Facet', tier:2, dtype:'Q', color:'#6aeaff', range:850, cd:.75, dmg:90, dice:79, nd:5, armorAura:{amt:6,r:650,ground:true}});
 sp('blackopal1',{name:'Black Opal', tier:1, dtype:'O', color:'#7a5cff', range:800, cd:1, dmg:24, dice:1, dmgAura:{pct:.2,r:800}, spdAura:{pct:.35,r:800}, upg:{to:'blackopal2',cost:250}});
 sp('blackopal2',{name:'Mystic Black Opal', tier:2, dtype:'O', color:'#9b84ff', range:1000, cd:1, dmg:49, dice:1, dmgAura:{pct:.3,r:1000}, spdAura:{pct:.35,r:1000}});
-sp('bloodstone1',{name:'Bloodstone', tier:1, dtype:'R', color:'#c3203f', range:700, cd:.5, dmg:67, dice:1, splash:{r:1.1,pct:.5}, burn:{dps:135,r:200}, upg:{to:'bloodstone2',cost:250}});
-sp('bloodstone2',{name:'Ancient Bloodstone', tier:2, dtype:'R', color:'#e0294d', range:700, cd:.5, dmg:64, dice:20, crit:{c:.15,m:3}, splash:{r:1.1,pct:.5}, burn:{dps:180,r:250}});
-sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:99, dice:1, splash:{r:1.1,pct:.4,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.15,r:250,stack:true}, upg:{to:'yellowsapphire2',cost:225}});
-sp('yellowsapphire2',{name:'Star Yellow Sapphire', tier:2, dtype:'S', color:'#fff08a', range:850, cd:.8, dmg:179, dice:1, splash:{r:1.1,pct:.4,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.2,r:300,stack:true}});
+sp('bloodstone1',{name:'Bloodstone', tier:1, dtype:'R', color:'#c3203f', range:700, cd:.5, dmg:84, dice:1, splash:{r:1.1,pct:.5}, burn:{dps:135,r:200}, upg:{to:'bloodstone2',cost:250}});
+sp('bloodstone2',{name:'Ancient Bloodstone', tier:2, dtype:'R', color:'#e0294d', range:700, cd:.5, dmg:109, dice:20, splash:{r:1.1,pct:.5}, burn:{dps:180,r:250}});
+sp('yellowsapphire1',{name:'Yellow Sapphire', tier:1, dtype:'S', color:'#ffe066', range:800, cd:1, dmg:59, dice:1, splash:{r:1.1,pct:.4,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.15,r:250,stack:true}, upg:{to:'yellowsapphire2',cost:225}});
+sp('yellowsapphire2',{name:'Star Yellow Sapphire', tier:2, dtype:'S', color:'#fff08a', range:850, cd:.8, dmg:139, dice:1, splash:{r:1.1,pct:.4,frost:true}, frost:{pct:.25,dur:2}, radslow:{pct:.2,r:300,stack:true}});
 sp('bryvx',    {name:'The Great Stone', tier:3, dtype:'X', color:'#ffffff', range:850, cd:.8, dmg:1500, dice:1, crit:{c:.3,m:3}, splash:{r:1.5,pct:.5}});
 // ---- rare one-shots (from the Dota 2 version): three Perfect gems placed in the same round ----
 sp('agate',    {name:'Agate', tier:3, rare:true, dtype:'E', color:'#5fd3a8', range:1100, cd:1, dmg:429, dice:1, multi:5});
@@ -576,7 +576,7 @@ function savePref(k, v){ try { const p = loadPrefs(); p[k] = v; localStorage.set
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.27j';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.27k';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
