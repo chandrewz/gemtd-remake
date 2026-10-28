@@ -34,9 +34,10 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 button:disabled{opacity:.45;cursor:not-allowed}
 button.primary{background:var(--gold);color:#1b1404;border-color:var(--gold);font-weight:700}
 button.primary:hover:not(:disabled){background:#ffd677;border-color:#ffd677}
-button.act-down{background:#17233d;border-color:#3f63c4;color:#d6e3ff}button.act-down:hover:not(:disabled){background:#1e2f52;border-color:#5b82e8}
-button.act-comb{background:#12342a;border-color:#2f9e6e;color:#d2fbe6}button.act-comb:hover:not(:disabled){background:#174434;border-color:#43c48c}
-button.act-special{background:#2a1c3f;border-color:#8a5cd6;color:#eadcff}button.act-special:hover:not(:disabled){background:#352451;border-color:#a77cf0}
+button.act-keep{background:rgba(242,195,91,.16);border-color:#d9a830;color:#ffe9b0}button.act-keep:hover:not(:disabled){background:rgba(242,195,91,.26);border-color:#f2c35b}
+button.act-down{background:rgba(79,125,255,.15);border-color:#3f63c4;color:#d6e3ff}button.act-down:hover:not(:disabled){background:rgba(79,125,255,.25);border-color:#5b82e8}
+button.act-comb{background:rgba(47,158,110,.17);border-color:#2f9e6e;color:#d2fbe6}button.act-comb:hover:not(:disabled){background:rgba(47,158,110,.27);border-color:#43c48c}
+button.act-special{background:rgba(138,92,214,.17);border-color:#8a5cd6;color:#eadcff}button.act-special:hover:not(:disabled){background:rgba(138,92,214,.27);border-color:#a77cf0}
 .uses .via{display:block;color:var(--mut,#9aa3b8);font-size:12px;font-weight:400;margin:-2px 0 2px}
 button.on{border-color:var(--gold);color:var(--gold)}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:16px;max-width:1240px;margin:0 auto;align-items:start}
@@ -251,7 +252,7 @@ table.dmg th:first-child,table.dmg td:first-child{text-align:left}
       <div class="setrow"><div><b>Board</b><small>The 3D board loads the first time you pick it.</small></div><div class="seg"><button data-view="2d" id="v2d">2D</button><button data-view="3d" id="v3d">3D</button></div></div>
       <div class="setrow" id="camRow"><div><b>3D camera</b><small>Drag to pan, right-drag to rotate, scroll to zoom, arrow keys to move.</small></div><button id="camReset">Reset camera</button></div>
       <div class="setrow"><div><b>Auto-upgrade</b><small>Spends gold for you as soon as you can afford it: tower upgrades and gem chance levels, cheapest first.</small></div><div class="seg"><button data-auto="1" id="aOn">On</button><button data-auto="0" id="aOff">Off</button></div></div>
-      <div class="setrow"><div><b>Game speed</b><small>Hotkeys 1, 2, 4 and 8.</small></div><div class="seg"><button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button><button id="sp8">8×</button></div></div>
+      <div class="setrow"><div><b>Game speed</b><small>Hotkeys 1, 2 and 4.</small></div><div class="seg"><button id="sp1" class="on">1×</button><button id="sp2">2×</button><button id="sp4">4×</button></div></div>
       <div class="setrow"><div><b>Show path</b><small>The route creeps will walk. Hotkey P.</small></div><div class="seg"><button data-path="1" id="pOn">On</button><button data-path="0" id="pOff">Off</button></div></div>
       <div class="setrow keysrow"><div><b>Hotkeys</b><p class="keys"><kbd>Tab</kbd> Next gem · <kbd>K</kbd> Keep · <kbd>D</kbd> Downgrade · <kbd>C</kbd> Combine ×2 · <kbd>F</kbd> Combine ×4 · <kbd>N</kbd> Repick · <kbd>S</kbd> Special · <kbd>U</kbd> Upgrade · <kbd>R</kbd> Remove rock · <kbd>G</kbd> Buy chances · <kbd>B</kbd> Towers · <kbd>P</kbd> Path · <kbd>Space</kbd> Pause · <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> <kbd>8</kbd> Speed · <kbd>Esc</kbd> Deselect</p></div></div>
       <div class="setrow" id="linkRow" hidden><div><b>More</b><small>Opens in a new tab.</small></div><div class="seg"><button id="lbBtn">Leaderboard</button><button id="galBtn">Tower gallery</button></div></div>
@@ -2898,7 +2899,7 @@ function renderInspector(){
   }
   const acts = [];
   if (t.draft && S.phase==='select'){
-    acts.push({label:'Keep this gem', primary:true, key:'K', fn:()=>keepGem(t)});
+    acts.push({label:'Keep this gem', key:'K', fn:()=>keepGem(t), cls:'act-keep'});
     if (d.kind==='gem' && d.q>=2) acts.push({label:`Downgrade and keep as ${DEFS[d.type+(d.q-1)].name}`, key:'D', fn:()=>downgradeGem(t), cls:'act-down'});
     if (d.kind==='gem'){
       const n = dupCount(t);
@@ -2938,7 +2939,7 @@ function renderInspector(){
     if (n>=2 && DEFS[upKey(t,1)].kind==='gem') alts.push({key:upKey(t,1), via:'combined ×2'});
     if (n>=4 && DEFS[upKey(t,2)].kind==='gem') alts.push({key:upKey(t,2), via:'combined ×4'}); }
   const uses = []; for (const a of alts) for (const R of RECIPES) if (R.group!=='secret' && R.group!=='rare' && R.parts.includes(a.key)) uses.push({R, a});
-  const usesHtml = uses.length ? `<div class="uses"><h2><span>Used in</span></h2>${uses.map(({R,a})=>`<div><b>${DEFS[R.to].name}</b>${a.via?`<small class="via">as ${DEFS[a.key].name}, ${a.via}</small>`:''}${R.parts.map(p=>partChip(p, partState(p))).join('')}</div>`).join('')}</div>` : '';
+  const usesHtml = uses.length ? `<div class="uses"><h2><span>Used in</span></h2>${uses.map(({R,a})=>`<div><b>${DEFS[R.to].name}</b>${a.via?`<small class="via">as ${DEFS[a.key].name}, ${a.via}</small>`:''}${R.parts.map(p=>partChip(p, a.via ? (p===a.key ? 'draft' : S.towers.some(o=>!o.draft && o.key===p)) : partState(p))).join('')}</div>`).join('')}</div>` : '';
   el.innerHTML = `<h2><span>Inspector</span>${t.draft?'<span style="color:var(--gold)">New this round</span>':''}</h2>
     <div class="insp-head" id="ihead"><div style="min-width:0"><div class="insp-title">${d.name}</div><div class="insp-sub">${sub}</div></div></div>
     <div class="kv">
@@ -3113,7 +3114,7 @@ document.addEventListener('keydown', ev => {
   if (DEV && ev.shiftKey && !ev.ctrlKey && !ev.metaKey && !ev.altKey && (ev.key==='S' || ev.key==='L')){ ev.preventDefault(); ev.key==='S' ? devSave(0) : devLoad(0); return; }
   if (ev.key==='Escape'){ if (!$('setModal').hidden){ $('setModal').hidden = true; return; } if (!$('bookModal').hidden){ $('bookModal').hidden = true; return; } if (S){ S.sel=null; ui.dirty=true; } }
   if (ev.key===' ' && S && S.started){ ev.preventDefault(); togglePause(); }
-  if (ev.key==='1') setSpeed(1); if (ev.key==='2') setSpeed(2); if (ev.key==='3' || ev.key==='4') setSpeed(4); if (ev.key==='8') setSpeed(8);
+  if (ev.key==='1') setSpeed(1); if (ev.key==='2') setSpeed(2); if (ev.key==='3' || ev.key==='4') setSpeed(4);
   if (!S || S.phase==='lost' || S.phase==='victory' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
   const k = ev.key.length===1 ? ev.key.toUpperCase() : ev.key;
   if (k==='Tab'){ // cycle through this round's gems, or towers that can combine
@@ -3128,10 +3129,10 @@ document.addEventListener('keydown', ev => {
   const a = (ui.acts||[]).find(x=>x.key===k && !x.disabled);
   if (a && $('bookModal').hidden){ ev.preventDefault(); a.fn(); }
 });
-function setSpeed(v){ if (!S) return; S.speed = v; [1,2,4,8].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }
+function setSpeed(v){ if (!S) return; v = Math.min(4, v); S.speed = v; [1,2,4].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }
 function togglePause(){ if (!S) return; S.paused = !S.paused; $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause'; $('pauseBtn').classList.toggle('on', S.paused); }
 $('pauseBtn').onclick = togglePause;
-[1,2,4,8].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
+[1,2,4].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
 function togglePath(){ ui.showPath = !ui.showPath; renderSettings(); toast(ui.showPath ? 'Path shown' : 'Path hidden'); }
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
@@ -3160,7 +3161,7 @@ function loop(now){
   let dt = Math.min(.1, (now-last)/1000); last = now;
   if (S && !S.paused && S.phase!=='lost' && S.phase!=='victory'){
     // fixed 1/60 s simulation ticks, so a replay of the same inputs plays out identically
-    S.acc = Math.min(S.acc + dt*S.speed*BASE_SPEED, 1); let n = 0;
+    S.acc = Math.min(S.acc + dt*Math.min(4, S.speed)*BASE_SPEED, 1); let n = 0;
     while (S.acc >= TICK && n < 80){ S.acc -= TICK; n++;
       try { step(TICK); } catch(err){ console.error(err); S.projs.length = 0; }   // never let one bad frame freeze the game
       if (S.phase==='lost'||S.phase==='victory') break; }
