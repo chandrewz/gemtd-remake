@@ -569,6 +569,10 @@ const EMPTY_ROUTE = computeRoute(new Uint8Array(GW*GH));
    ============================================================ */
 let S = null;
 const LS_KEY = 'gemtd-web-best';
+// settings the player picked (speed, path, auto-upgrade) are remembered in this browser; the 2D/3D choice is kept under gemtd.view
+const PREFS_KEY = 'gemtd.prefs';
+function loadPrefs(){ try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch(e){ return {}; } }
+function savePref(k, v){ try { const p = loadPrefs(); p[k] = v; localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch(e){} }
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
@@ -584,7 +588,7 @@ function newGame(diff, seed){
        seed: (seed ?? (Math.random()*4294967296)>>>0), tick:0, acc:0, rec:[], t0:Date.now(), tainted:false};
   S.rngGem = mkRng(S.seed); S.rngHit = mkRng(S.seed ^ 0x9E3779B9);
   S.route = computeRoute(blockedMap());
-  logs.length = 0; setSpeed(1); $('pauseBtn').textContent='Pause'; $('pauseBtn').classList.remove('on');
+  logs.length = 0; setSpeed([1,2,4].includes(loadPrefs().speed) ? loadPrefs().speed : 1, false); $('pauseBtn').textContent='Pause'; $('pauseBtn').classList.remove('on');
   log(`<b>Wave 1</b> — place five gems to start building your maze.`);
   ui.dirty = true;
 }
@@ -2743,7 +2747,7 @@ function floater(x,y,s,color){ S.fx.push({kind:'text',x,y,s,color,t:0,life:.9});
    UI
    ============================================================ */
 const $ = id => document.getElementById(id);
-const ui = {dirty:true, statsDirty:true, showPath:true, tab:'gems'};
+const ui = {dirty:true, statsDirty:true, showPath:loadPrefs().path !== false, tab:'gems'};
 const logs = [];
 function log(html){ logs.unshift(html); if (logs.length>40) logs.pop(); const el = $('log'); el.innerHTML = logs.slice(0,30).map(l=>`<li>${l}</li>`).join(''); }
 let toastTimer = 0;
@@ -3129,11 +3133,11 @@ document.addEventListener('keydown', ev => {
   const a = (ui.acts||[]).find(x=>x.key===k && !x.disabled);
   if (a && $('bookModal').hidden){ ev.preventDefault(); a.fn(); }
 });
-function setSpeed(v){ if (!S) return; v = Math.min(4, v); S.speed = v; [1,2,4].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }
+function setSpeed(v, save=true){ if (!S) return; v = Math.min(4, v); S.speed = v; if (save) savePref('speed', v); [1,2,4].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }
 function togglePause(){ if (!S) return; S.paused = !S.paused; $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause'; $('pauseBtn').classList.toggle('on', S.paused); }
 $('pauseBtn').onclick = togglePause;
 [1,2,4].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
-function togglePath(){ ui.showPath = !ui.showPath; renderSettings(); toast(ui.showPath ? 'Path shown' : 'Path hidden'); }
+function togglePath(){ ui.showPath = !ui.showPath; savePref('path', ui.showPath); renderSettings(); toast(ui.showPath ? 'Path shown' : 'Path hidden'); }
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
 $('linkRow').hidden = !submitRepo();
@@ -3259,7 +3263,7 @@ async function setView(on){
   renderSettings();
 }
 // auto-upgrade: buys what the player could buy by hand (and records it the same way), so replays still check out
-let autoOn = false, autoT = 0;   // off on every page load
+let autoOn = loadPrefs().auto === true, autoT = 0;   // remembered between visits
 function autoUpgrade(dt){
   if (!autoOn || !S || S.paused || S.phase==='lost' || S.phase==='victory' || S.tainted==='replay') return;
   autoT += dt; if (autoT < .25) return; autoT = 0;
@@ -3279,9 +3283,9 @@ $('setBtn').onclick = () => { renderSettings(); $('setModal').hidden = false; };
 $('setClose').onclick = () => { $('setModal').hidden = true; };
 $('setModal').addEventListener('click', ev => { if (ev.target.id==='setModal') $('setModal').hidden = true; });
 $('v2d').onclick = () => setView(false); $('v3d').onclick = () => setView(true);
-$('aOn').onclick = $('aOff').onclick = ev => { autoOn = ev.target.dataset.auto==='1'; toast(autoOn ? 'Auto-upgrade on' : 'Auto-upgrade off'); renderSettings(); };
+$('aOn').onclick = $('aOff').onclick = ev => { autoOn = ev.target.dataset.auto==='1'; savePref('auto', autoOn); toast(autoOn ? 'Auto-upgrade on' : 'Auto-upgrade off'); renderSettings(); };
 $('camReset').onclick = () => { if (view3d.mod) view3d.mod.resetView(); };
-$('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; renderSettings(); };
+$('pOn').onclick = $('pOff').onclick = ev => { ui.showPath = ev.target.dataset.path==='1'; savePref('path', ui.showPath); renderSettings(); };
 let wantView = '3d'; try { wantView = localStorage.getItem('gemtd.view') || '3d'; } catch(e){}
 import('./view3d.js').then(m => { view3d.mod = m; sprites.clear(); portraits.clear(); ui.dirty = true; if (wantView==='3d') setView(true); })
   .catch(e => { console.error('3D view unavailable', e); renderSettings(); });
