@@ -3133,10 +3133,11 @@ document.addEventListener('keydown', ev => {
   const a = (ui.acts||[]).find(x=>x.key===k && !x.disabled);
   if (a && $('bookModal').hidden){ ev.preventDefault(); a.fn(); }
 });
-function setSpeed(v, save=true){ if (!S) return; v = Math.min(4, v); S.speed = v; if (save) savePref('speed', v); [1,2,4].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }
+function setSpeed(v, save=true){ v = [1,2,4].includes(v) ? v : 1; if (save) savePref('speed', v); if (S) S.speed = v; [1,2,4].forEach(k=>$('sp'+k).classList.toggle('on',k===v)); }   // works before a game starts too
 function togglePause(){ if (!S) return; S.paused = !S.paused; $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause'; $('pauseBtn').classList.toggle('on', S.paused); }
 $('pauseBtn').onclick = togglePause;
 [1,2,4].forEach(k=> $('sp'+k).onclick = ()=>setSpeed(k));
+setSpeed(loadPrefs().speed, false);
 function togglePath(){ ui.showPath = !ui.showPath; savePref('path', ui.showPath); renderSettings(); toast(ui.showPath ? 'Path shown' : 'Path hidden'); }
 $('bookBtn').onclick = ()=>{ $('bookModal').hidden = false; renderBook(); };
 $('lbBtn').onclick = ()=> window.open('leaderboard.html','_blank','noopener');
