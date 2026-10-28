@@ -344,7 +344,7 @@ const BASE = {
   E:[[500,1,3,4],[550,1,9,4],[600,1,14,11],[700,1,29,9],[800,1,79,11],[900,1,179,21]],
   O:[[600,1,4,1],[700,1,9,1],[800,1,19,1],[900,1,39,1],[1000,1,84,1],[1167,1,179,1]],
   R:[[650,1,7,2],[700,1,12,4],[750,1,19,6],[800,1,37,8],[875,1,79,25],[900,.75,139,1]],
-  S:[[500,1,4,4],[750,1,9,4],[800,1,15,6],[850,1,29,11],[1056,1,59,16],[1278,1,199,1]],
+  S:[[500,1,4,4],[556,1,9,4],[611,1,15,6],[667,1,29,11],[722,1,59,16],[834,1,199,1]],
   T:[[500,1,3,1],[500,1,7,1],[500,1,13,1],[500,1,24,1],[600,1,74,1],[700,1,249,1]],
 };
 const E_POISON = [[.02,3,2],[.04,4,3],[.06,5,5],[.08,6,10],[.1,7,15],[.12,8,25]];     // slow, dur, dps
@@ -576,7 +576,7 @@ function savePref(k, v){ try { const p = loadPrefs(); p[k] = v; localStorage.set
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.27k';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.28a';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck

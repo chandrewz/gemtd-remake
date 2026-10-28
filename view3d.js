@@ -596,26 +596,30 @@ const FORMS = {
     for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + Math.PI/4; g.add(mesh(new THREE.CylinderGeometry(.03, .035, .5, 10), M.gold, Math.cos(a)*.34, .4, Math.sin(a)*.34)); g.add(at(glowSprite(C('#fff3cc'), .2, .4), Math.cos(a)*.34, .67, Math.sin(a)*.34)); }
     const d = mesh(brilliantGeo(.3, 10), crysMat('#6a5a40', '#fff3cc', '#ffffff', {rainbow:.2}), 0, .78, 0); d.rotation.x = 1.05; g.add(d);
     g.add(runeCircle(.5, '#ffe9a0', 'star', .5)); g.add(pool(C('#fff3cc'), 1.1, .3)); return {g, top:.8, sparkle:true, anims:[{o:d, kind:'spin', speed:.4}, {o:d, kind:'bob', amp:.03}]}; },
-  // Star Sapphire: a frozen citadel. Ice spires rise from a crown of jagged shards on a dark slate dais veined with blue light,
-  // a rune ring and four sapphire studs on its top, icicles spilling from its corners, and a faceted sapphire star turning above the spires
-  starsapphire(){ const g = new THREE.Group(), anims = [], ice = crysMat('#0a2a66', '#8cc4ff', '#f0f8ff', {glow:1.1}), sap = crysMat('#020b3a', '#2f6bff', '#d4e4ff', {glow:1.25});
+  // Star Sapphire: a great faceted sapphire star standing upright before a spiked burst of ice, held in a cup of curved ice blades,
+  // over a dark slate dais with a rune ring, four sapphire studs and icicles at its corners
+  starsapphire(){ const g = new THREE.Group(), anims = [], ice = crysMat('#0a2a66', '#8cc4ff', '#f0f8ff', {glow:1.1}), sap = crysMat('#020b3a', '#2f6bff', '#d4e4ff', {glow:1.3});
     const slate = M.polish;   // dark polished slate; the rune ring and studs carry the light
     g.add(mesh(new RoundedBoxGeometry(.78, .1, .78, 2, .03), slate, 0, .05, 0)); g.add(mesh(new RoundedBoxGeometry(.62, .08, .62, 2, .025), slate, 0, .14, 0));
     const top = .18, rune = runeCircle(.27, '#8cc4ff', 'ring', .75); rune.position.y = top + .003; g.add(rune);
-    for (let i=0;i<4;i++){ const a = i/4*Math.PI*2, x = Math.cos(a)*.26, z = Math.sin(a)*.26;   // sapphire studs set in silver
-      g.add(mesh(new THREE.CylinderGeometry(.038, .042, .018, 16), M.silver, x, top + .009, z)); const st = mesh(brilliantGeo(.03, 8), sap, x, top + .03, z); g.add(st); }
+    for (let i=0;i<4;i++){ const a = i/4*Math.PI*2, x = Math.cos(a)*.26, z = Math.sin(a)*.26;
+      g.add(mesh(new THREE.CylinderGeometry(.038, .042, .018, 16), M.silver, x, top + .009, z)); g.add(mesh(brilliantGeo(.03, 8), sap, x, top + .03, z)); }
     for (const [sx, sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]) for (let k=0;k<3;k++){ const ic = mesh(withH(new THREE.ConeGeometry(.026 + k*.005, .1 + k*.045, 5).toNonIndexed()), ice);
       ic.rotation.x = Math.PI; const off = [-.06, 0, .06][k]; ic.position.set(sx*.385 + (sx*sz>0 ? off : -off)*.5, .1 - (.05 + k*.022), sz*.385 + off*.5); g.add(ic); }
-    // a crown of jagged shards leaning out, then the spires
-    for (let i=0;i<9;i++){ const a = i/9*Math.PI*2 + .2, h = .1 + (i%3)*.04, sh = mesh(obelisk(.028, h, 300 + i, false), ice, Math.cos(a)*.15, top + .02, Math.sin(a)*.15); sh.rotation.set(Math.sin(a)*.6, 0, -Math.cos(a)*.6); g.add(sh); }
-    g.add(mesh(obelisk(.06, .62, 310, false), ice, 0, top + .03, 0));
-    for (let i=0;i<6;i++){ const a = i/6*Math.PI*2, h = .26 + (i%2)*.14, sp = mesh(obelisk(.036, h, 320 + i, false), ice, Math.cos(a)*.1, top + .02, Math.sin(a)*.1); sp.rotation.set(Math.sin(a)*.12, 0, -Math.cos(a)*.12); g.add(sp); }
-    // the star: five faceted points, turning slowly over the tallest spire
-    const shape = new THREE.Shape(); for (let i=0;i<10;i++){ const a = Math.PI/2 + i*Math.PI/5, r = i%2 ? .06 : .15; i ? shape.lineTo(Math.cos(a)*r, Math.sin(a)*r) : shape.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
-    const sg = new THREE.ExtrudeGeometry(shape, {depth:.03, bevelEnabled:true, bevelThickness:.02, bevelSize:.012, bevelSegments:1}); sg.center();
-    const star = new THREE.Group(); star.position.y = top + .98; g.add(star); star.add(mesh(withH(sg.toNonIndexed()), sap)); g.add(at(glowSprite(C('#6aa0ff'), .5, .35), 0, top + .98, 0));
-    anims.push({o:star, kind:'spin', speed:.6}, {o:star, kind:'bob', amp:.025});
-    g.add(pool(C('#6aa0ff'), 1.15, .28)); return {g, top:top + .98, anims}; },
+    // a cup of curved ice blades: thin four-sided horns sweeping up and out
+    for (let i=0;i<10;i++){ const a = i/10*Math.PI*2, h = .26 + (i%2)*.1, bl = mesh(withH(new THREE.ConeGeometry(.036, h, 4).toNonIndexed()), ice, Math.cos(a)*.13, top + h/2, Math.sin(a)*.13);
+      bl.rotation.set(Math.sin(a)*.55, 0, -Math.cos(a)*.55); bl.scale.set(1, 1, .45); g.add(bl); }
+    const starShape = (n, rOut, rIn) => { const sh = new THREE.Shape(); for (let i=0;i<n*2;i++){ const a = Math.PI/2 + i*Math.PI/n, r = i%2 ? rIn : rOut; i ? sh.lineTo(Math.cos(a)*r, Math.sin(a)*r) : sh.moveTo(Math.cos(a)*r, Math.sin(a)*r); } return sh; };
+    const head = new THREE.Group(); head.position.y = top + .6; g.add(head);
+    // behind: a spiked burst of ice rays; in front: the faceted sapphire star itself
+    const burst = new THREE.ExtrudeGeometry(starShape(12, .36, .12), {depth:.012, bevelEnabled:true, bevelThickness:.008, bevelSize:.006, bevelSegments:1}); burst.center();
+    const bm = mesh(withH(burst), ice); bm.position.z = -.03; head.add(bm);
+    const core = new THREE.ExtrudeGeometry(starShape(5, .25, .1), {depth:.05, bevelEnabled:true, bevelThickness:.04, bevelSize:.025, bevelSegments:1}); core.center();
+    head.add(mesh(withH(core), sap)); g.add(at(glowSprite(C('#6aa0ff'), .8, .3), 0, top + .6, 0));
+    anims.push({o:head, kind:'spin', speed:.4}, {o:head, kind:'bob', amp:.02});
+    // a few loose ice shards hanging in the air
+    for (let i=0;i<4;i++){ const a = i/4*Math.PI*2 + .7, sh = mesh(withH(new THREE.OctahedronGeometry(.03, 0).toNonIndexed()), ice, Math.cos(a)*.3, top + .42 + (i%2)*.22, Math.sin(a)*.3); sh.scale.set(.7, 1.4, .7); g.add(sh); anims.push({o:sh, kind:'bob', amp:.03, speed:1 + i*.3}); }
+    g.add(pool(C('#6aa0ff'), 1.15, .28)); return {g, top:top + .95, anims}; },
   crownprince(){ const g = new THREE.Group(); g.add(stoneRing(.3, 8, .11, '#2a1416', '#ff2e4d', 4));
     g.add(mesh(roughBlock(.2, .5, .2, 3, .05), glowStone('#3a2024', '#ff5a3a', .9)));
     const crown = new THREE.Group(); crown.position.y = .5; g.add(crown); crown.add(mesh(new THREE.CylinderGeometry(.16, .14, .08, 16, 1, true), M.gold, 0, .04, 0));
