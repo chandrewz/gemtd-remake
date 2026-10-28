@@ -517,7 +517,16 @@ const FORMS = {
     if (t===2){ const rb = ribbons(.16, .8, 3, '#5dff9a'); rb.position.y = .25; g.add(rb); g.add(at(starSprite('#9dffb0', .4, .7), 0, h + .1, 0)); }
     g.add(pool(C('#3dff8a'), .7, .22)); return {g, top:h + .1, anims:[{o:gem, kind:'spin', speed:.8}]}; },
   gold(t){ const g = new THREE.Group();
-    if (t===1){ g.add(mesh(roughBlock(.5, .16, .42, 3, .05), glowStone('#5a4a36', '#ffcf4a', .5))); g.add(coins(20, .2, 9)).children; const c = crystalFan(5, .5, .06, 1.3, colMat('#ffcf4a'), 21); c.position.y = .16; g.add(c); g.add(pool(C('#ffcf4a'), .8, .22)); return {g, top:.5}; }
+    // Gold: a smaller step pyramid, three gold tiers banded with lapis on a single sandstone slab, gold ingots stacked at its foot
+    if (t===1){ g.add(mesh(new THREE.BoxGeometry(.56, .06, .56), M.sand, 0, .03, 0)); g.add(mesh(new THREE.BoxGeometry(.5, .01, .5), M.goldLit, 0, .065, 0));
+      let y = .07;
+      for (let i=0;i<3;i++){ const w = .38 - i*.09; g.add(mesh(new THREE.BoxGeometry(w, .075, w), M.goldLit, 0, y + .0375, 0)); y += .075;
+        if (i < 2){ g.add(mesh(new THREE.BoxGeometry(w - .03, .013, w - .03), M.lapis, 0, y + .0065, 0)); y += .013; } }
+      const capGeo = withH(new THREE.ConeGeometry(.07, .12, 4).toNonIndexed()); capGeo.rotateY(Math.PI/4);
+      const cap = mesh(capGeo, colMat('#ffd24a', {glow:1}), 0, y + .06, 0); g.add(cap); g.add(at(starSprite('#fff0b0', .3, .55), 0, y + .12, 0));
+      const ingot = new THREE.BoxGeometry(.07, .03, .035);
+      for (const [x, yy, z, r] of [[.22,.075,.17,.3],[.2,.075,.21,.3],[.21,.105,.19,.3],[-.2,.075,.2,-.4]]){ const b = mesh(ingot, M.goldLit, x, yy, z); b.rotation.y = r; g.add(b); }
+      g.add(coins(12, .32, 9)); g.add(pool(C('#ffcf4a'), .75, .16)); return {g, top:y + .12, anims:[{o:cap, kind:'bob', amp:.015}]}; }
     // Egyptian Gold: a stepped pyramid of polished gold banded with lapis, on a sandstone dais with four gold-tipped obelisks, a glowing pyramidion on top
     g.add(mesh(new THREE.BoxGeometry(.68, .06, .68), M.sand, 0, .03, 0)); g.add(mesh(new THREE.BoxGeometry(.58, .05, .58), M.sand, 0, .085, 0));
     g.add(mesh(new THREE.BoxGeometry(.6, .012, .6), M.goldLit, 0, .062, 0));
