@@ -1,4 +1,4 @@
-// Gem TD Remastered: the 3D board. Loaded on demand when the player turns on 3D view.
+// Gem TD Remake: the 3D board. Loaded on demand when the player turns on 3D view.
 // It only reads the game's state (S, DEFS, the map constants) and draws it; every rule, tick and replay stays in index.html.
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';

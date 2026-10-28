@@ -1,4 +1,4 @@
-# Gem TD Remastered
+# Gem TD Remake
 
 **[Play it here](https://chandrewz.github.io/gemtd-remake/)** · [Leaderboard](https://chandrewz.github.io/gemtd-remake/leaderboard.html) · [Tower gallery](https://chandrewz.github.io/gemtd-remake/towers.html)
 
