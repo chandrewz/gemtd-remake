@@ -843,7 +843,21 @@ NEWFORMS2.obsidian = function(){
   return {g, top:.8, anims}; };
 Object.assign(FORMS, {obsidian:NEWFORMS2.obsidian});
 function buildForm(key, d){ const fam = famOf(key), t = (key.match(/(\d)$/) || [0, 1])[1] | 0, f = FORMS[fam] || FORMS[key];
-  const r = f(t || 1, d); r.anims = r.anims || []; return r; }
+  const r = f(t || 1, d); r.anims = r.anims || []; return TIER_DRESS.has(fam) && t >= 2 ? dressTier(r, t, d) : r; }
+// upgrades read at a glance: tier 2 stands on a stepped, gold-rimmed dais with a gem stud at each corner;
+// tier 3 adds a pillar at each corner crowned with a shard of the tower's colour
+const TIER_DRESS = new Set(['malachite','starruby','jade','redcrystal','darkemerald','uranium','paraiba','blackopal','bloodstone']);
+function dressTier(r, t, d){ const out = new THREE.Group(), col = d.color || '#ffffff', stone = glowStone('#161a26', col, .25), gem = colMat(col, {glow:1});
+  const H = t === 2 ? .07 : .09, W = t === 2 ? .84 : .9;
+  out.add(mesh(new RoundedBoxGeometry(W, H*.55, W, 2, .02), stone, 0, H*.275, 0)); out.add(mesh(new RoundedBoxGeometry(W - .08, H*.45, W - .08, 2, .015), stone, 0, H*.55 + H*.225, 0));
+  out.add(mesh(new THREE.BoxGeometry(W - .06, .01, W - .06), M.goldLit, 0, H*.55 + .002, 0));
+  const k = t === 2 ? 1.08 : 1.15; r.g.scale.multiplyScalar(k); r.g.position.y = H; out.add(r.g);
+  const c = W/2 - .07;
+  for (const [sx, sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+    if (t === 2){ out.add(mesh(new THREE.CylinderGeometry(.03, .034, .016, 12), M.goldLit, sx*c, H + .008, sz*c)); out.add(mesh(brilliantGeo(.028, 8), gem, sx*c, H + .03, sz*c)); }
+    else { out.add(mesh(new THREE.BoxGeometry(.05, .26, .05), stone, sx*c, H + .13, sz*c)); out.add(mesh(new THREE.BoxGeometry(.066, .02, .066), M.goldLit, sx*c, H + .27, sz*c));
+      out.add(mesh(obelisk(.022, .07, 400 + sx*3 + sz, false), gem, sx*c, H + .29, sz*c)); } }
+  r.g = out; r.top = (r.top || .5)*k + H; return r; }
 
 function lightningGeo(a, b, seed, jag=.12, n=8){ const R = mkRng(seed), pts = [];
   for (let i=0;i<=n;i++){ const t = i/n, p = a.clone().lerp(b, t); if (i && i<n) p.add(new THREE.Vector3((R()-.5)*jag, (R()-.5)*jag*.6, (R()-.5)*jag)); pts.push(p); }
