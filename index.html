@@ -342,8 +342,8 @@ const BASE = {
   Q:[[350,.35,5,3],[365,.35,11,4],[380,.35,23,7],[425,.35,47,8],[550,.35,99,21],[600,.35,279,1]],
   D:[[500,1,7,5],[550,1,15,3],[600,1,29,8],[650,1,57,8],[750,1,139,11],[850,1,299,51]],
   E:[[500,1,3,4],[550,1,9,4],[600,1,14,11],[700,1,29,9],[800,1,79,11],[900,1,179,21]],
-  O:[[600,1,4,1],[700,1,9,1],[800,1,19,1],[900,1,39,1],[1000,1,84,1],[1167,1,179,1]],
-  R:[[650,1,7,2],[700,1,12,4],[750,1,19,6],[800,1,37,8],[875,1,79,25],[900,.75,139,1]],
+  O:[[389,1,4,1],[389,1,9,1],[500,1,19,1],[500,1,39,1],[611,1,84,1],[722,1,179,1]],
+  R:[[611,1,7,2],[667,1,12,4],[722,1,19,6],[778,1,37,8],[834,1,79,25],[889,.75,139,1]],
   S:[[500,1,4,4],[556,1,9,4],[611,1,15,6],[667,1,29,11],[722,1,59,16],[834,1,199,1]],
   T:[[500,1,3,1],[500,1,7,1],[500,1,13,1],[500,1,24,1],[600,1,74,1],[700,1,249,1]],
 };
@@ -576,7 +576,7 @@ function savePref(k, v){ try { const p = loadPrefs(); p[k] = v; localStorage.set
 function loadBest(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
 function saveBest(){ try { const b = loadBest(); const reached = S.wave - (S.phase==='victory'?0:1); if ((b[S.diff]||0) < reached){ b[S.diff]=reached; localStorage.setItem(LS_KEY, JSON.stringify(b)); } } catch(e){} }
 
-const GAME_VERSION = '2026.10.28d';   // bump whenever gameplay changes, so old replays go to review
+const GAME_VERSION = '2026.10.28e';   // bump whenever gameplay changes, so old replays go to review
 const START_LIVES = 50;
 function mkRng(a){ a >>>= 0; return function(){ a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // two independent streams so gem rolls never depend on combat luck
@@ -725,8 +725,8 @@ function finishSelection(t){
   t.draft = false; S.draft = []; S.sel = t; S.auraDirty = true;
   startWave();
 }
-// repick: reroll all five gems placed this round; each repick in a round costs 25 more than the last
-const repickCost = () => 25 * ((S.repicks||0) + 1);   // 25, 50, 75, ... within a round
+// repick: reroll all five gems placed this round; each repick costs 25 more than the one before, all game long
+const repickCost = () => 25 * ((S.repicks||0) + 1);   // 25, 50, 75, ... over the whole game
 function repickDraft(){
   if (S.phase!=='select' || !S.draft.length) return;
   const cost = repickCost(); if (S.gold < cost){ toast(`Repick costs ${cost} gold`, true); return; }
@@ -802,7 +802,7 @@ function endWave(){
   if (S.waveLeaks===0){ const b = 5+S.wave; S.gold += b; log(`Wave ${S.wave} cleared with no leaks. <b>+${b} gold</b>.`); }
   else log(`Wave ${S.wave} over. ${S.waveLeaks} creep${S.waveLeaks>1?'s':''} reached the castle.`);
   if (S.wave===50){ log(`<b>The Gem Eater is slain.</b> Endless waves begin: every wave from here grows ${Math.round((ENDLESS_GROWTH-1)*100)}% stronger.`); toast('Wave 50 cleared · endless mode'); }
-  S.wave++; S.phase='build'; S.placed=0; S.repicks=0; S.projs.length=0;
+  S.wave++; S.phase='build'; S.placed=0; S.projs.length=0;   // repicks keep counting all game
   saveBest();
   ui.dirty = true;
 }
